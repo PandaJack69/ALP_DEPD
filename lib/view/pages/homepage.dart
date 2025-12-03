@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
-import 'loginpage.dart'; 
+import 'package:provider/provider.dart'; // Import Provider
+import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
+import 'loginpage.dart';
+import 'profilepage.dart'; 
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 1. Listen to the AuthViewModel
+    // 'watch' means if the login state changes, this widget rebuilds immediately
+    final authViewModel = context.watch<AuthViewModel>();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
-          children: const [
-            // 1. Header / Hero Section
-            HeaderSection(),
+          children: [
+            // 2. Pass the isLoggedIn state to the Header Section
+            HeaderSection(isLoggedIn: authViewModel.isLoggedIn),
 
-            // 2. Featured Events Title & Grid
-            FeaturedEventsSection(),
+            // Featured Events Section
+            const FeaturedEventsSection(),
 
-            // 3. Footer Section
-            FooterSection(),
+            // Footer Section
+            const FooterSection(),
           ],
         ),
       ),
@@ -27,14 +34,15 @@ class HomePage extends StatelessWidget {
 }
 
 // ==============================================================================
-// 1️⃣ HEADER SECTION
+// 1️⃣ HEADER SECTION (With Login Logic)
 // ==============================================================================
 class HeaderSection extends StatelessWidget {
-  const HeaderSection({super.key});
+  final bool isLoggedIn; // Variable to hold state
+
+  const HeaderSection({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
-    // Determine screen width for responsive layout
     final double width = MediaQuery.of(context).size.width;
     final bool isDesktop = width > 800;
 
@@ -75,24 +83,44 @@ class HeaderSection extends StatelessWidget {
                   const SizedBox(width: 20),
                 ],
                 
-                // --- LOG IN BUTTON ---
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate to the Login Page
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF360C4C),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                // --- LOGIC SWITCH: Profile OR Log In ---
+                if (isLoggedIn) 
+                  // IF LOGGED IN: Show Profile Button
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ProfilePage()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent, // Outline style
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
+                    child: const Text("Profile"),
+                  )
+                else 
+                  // IF LOGGED OUT: Show Log In Button
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF360C4C),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: const Text("Log In"),
                   ),
-                  child: const Text("Log In"),
-                ),
               ],
             ),
 
@@ -144,7 +172,7 @@ class HeaderSection extends StatelessWidget {
                     icon: const Icon(Icons.search,
                         color: Colors.black87, size: 28),
                     suffixIcon: Transform.rotate(
-                      angle: -0.7, // Tilting the arrow slightly
+                      angle: -0.7,
                       child: const Icon(Icons.send, color: Color(0xFF360C4C)),
                     ),
                   ),
@@ -221,7 +249,7 @@ class FeaturedEventsSection extends StatelessWidget {
                 title: "Leadership 101 | Batch 1",
                 tag: "Closing Soon",
                 tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/1/400/300", // Placeholder
+                imageUrl: "https://picsum.photos/id/1/400/300", 
               ),
               _buildEventCard(
                 title: "Hackfest 2025",
