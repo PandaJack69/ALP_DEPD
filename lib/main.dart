@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; 
+import 'firebase_options.dart'; // <--- Import Options
 import 'package:provider/provider.dart';
-// Import your view model and pages
 import 'viewmodel/authviewmodel.dart';
 import 'view/pages/homepage.dart'; 
 
-void main() {
+// Make main async
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); 
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
@@ -13,7 +22,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap the MaterialApp with MultiProvider
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
