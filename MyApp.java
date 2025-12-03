@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 // Import your view model and pages
-import 'viewmodel/authviewmodel.dart';
+import 'view_model/auth_view_model.dart';
 import 'view/pages/homepage.dart'; 
 
 void main() {

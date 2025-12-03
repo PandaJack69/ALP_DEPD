@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Import Provider
+import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // We use LayoutBuilder to determine if we are on a desktop/web (wide)
-    // or mobile (narrow) screen.
     return Scaffold(
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 800) {
-            // Desktop/Tablet View (Split Screen)
             return Row(
               children: [
-                const Expanded(
-                  flex: 5,
-                  child: LeftSideHero(),
-                ),
+                const Expanded(flex: 5, child: LeftSideHero()),
                 Expanded(
-                  flex: 6, // Slightly wider for the form area
+                  flex: 6,
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 500),
@@ -34,7 +30,6 @@ class LoginPage extends StatelessWidget {
               ],
             );
           } else {
-            // Mobile View (Form Only)
             return const Center(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(24.0),
@@ -48,30 +43,20 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 1️⃣ The Left Side (Updated Gradient & Text)
-// ---------------------------------------------------------------------------
+// LeftSideHero remains exactly the same...
 class LeftSideHero extends StatelessWidget {
   const LeftSideHero({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        // The specific dark navy -> deep purple gradient
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F172A), // Very Dark Navy (Top Left)
-            Color(0xFF360C4C), // Deep Rich Purple (Bottom Right)
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF360C4C)],
         ),
-        // The rounded corners on the right side
         borderRadius: BorderRadius.only(
-          topRight: Radius.circular(100),
-          bottomRight: Radius.circular(100),
-        ),
+            topRight: Radius.circular(100), bottomRight: Radius.circular(100)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 60.0),
@@ -79,27 +64,20 @@ class LeftSideHero extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            Text(
-              "Find Your Next\nExperience",
-              style: TextStyle(
-                color: Colors.white60,
-                fontSize: 24,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w300,
-                fontFamily: 'Georgia', 
-              ),
-            ),
+            Text("Find Your Next\nExperience",
+                style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 24,
+                    fontStyle: FontStyle.italic,
+                    fontFamily: 'Georgia')),
             SizedBox(height: 24),
-            Text(
-              "Discover\n&\nPromote\nUpcoming\nEvents",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 52,
-                fontWeight: FontWeight.w900, // Extra Bold
-                height: 1.1, // Tighter line spacing
-                fontFamily: 'Arial',
-              ),
-            ),
+            Text("Discover\n&\nPromote\nUpcoming\nEvents",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 52,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                    fontFamily: 'Arial')),
           ],
         ),
       ),
@@ -108,7 +86,7 @@ class LeftSideHero extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// 2️⃣ The Right Side (The Form)
+// THE UPDATED FORM WITH LOGIC
 // ---------------------------------------------------------------------------
 class SignInForm extends StatefulWidget {
   const SignInForm({super.key});
@@ -118,186 +96,157 @@ class SignInForm extends StatefulWidget {
 }
 
 class _SignInFormState extends State<SignInForm> {
+  // Controllers to capture text input
+  final TextEditingController _emailController = TextEditingController(text: "jonas_kahnwald@gmail.com");
+  final TextEditingController _passwordController = TextEditingController();
+  
   bool _keepLogged = false;
   bool _obscurePassword = true;
+  
+  // Toggle between Login and Register mode
+  bool _isLoginMode = true; 
 
   @override
   Widget build(BuildContext context) {
+    // Access the ViewModel
+    final authViewModel = Provider.of<AuthViewModel>(context);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header
-        const Text(
-          "Sign in",
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+        Text(
+          _isLoginMode ? "Sign in" : "Create Account",
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         const SizedBox(height: 8),
-        const Text(
-          "Please login to continue to your account.",
-          style: TextStyle(fontSize: 14, color: Colors.black54),
+        Text(
+          _isLoginMode 
+            ? "Please login to continue to your account."
+            : "Enter your details to get started.",
+          style: const TextStyle(fontSize: 14, color: Colors.black54),
         ),
         const SizedBox(height: 40),
 
+        // Show Error Message if exists
+        if (authViewModel.errorMessage != null)
+          Container(
+            padding: const EdgeInsets.all(10),
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+            child: Text(authViewModel.errorMessage!, style: const TextStyle(color: Colors.red)),
+          ),
+
         // Email Field
         TextFormField(
-          initialValue: "jonas_kahnwald@gmail.com",
+          controller: _emailController,
           decoration: InputDecoration(
             labelText: "Email",
             labelStyle: const TextStyle(color: Color(0xFF4A0E60)),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF4A0E60), width: 1.5),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Color(0xFF4A0E60), width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
         const SizedBox(height: 20),
 
         // Password Field
         TextFormField(
+          controller: _passwordController,
           obscureText: _obscurePassword,
           decoration: InputDecoration(
             labelText: "Password",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.black12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                color: Colors.grey,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
+              icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.grey),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
         const SizedBox(height: 15),
 
         // Checkbox
-        Row(
-          children: [
-            SizedBox(
-              height: 24,
-              width: 24,
-              child: Checkbox(
-                value: _keepLogged,
-                activeColor: const Color(0xFF4A0E60),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                onChanged: (val) {
-                  setState(() {
-                    _keepLogged = val!;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              "Keep me logged in",
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-          ],
-        ),
-        const SizedBox(height: 30),
-
-        // Sign In Button
-        ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF330C48), // Dark Purple
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            elevation: 0,
-          ),
-          child: const Text(
-            "Sign in",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // "or" Divider
-        Row(
-          children: const [
-            Expanded(child: Divider(color: Colors.grey)),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Text("or", style: TextStyle(color: Colors.grey)),
-            ),
-            Expanded(child: Divider(color: Colors.grey)),
-          ],
-        ),
-        const SizedBox(height: 20),
-
-        // Google Button
-        OutlinedButton(
-          onPressed: () {},
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            side: const BorderSide(color: Colors.black12),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        if (_isLoginMode)
+          Row(
             children: [
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Arial'),
-                  children: [
-                    TextSpan(text: "G", style: TextStyle(color: Colors.blue)),
-                    TextSpan(text: "o", style: TextStyle(color: Colors.red)),
-                    TextSpan(text: "o", style: TextStyle(color: Colors.amber)),
-                    TextSpan(text: "g", style: TextStyle(color: Colors.blue)),
-                    TextSpan(text: "l", style: TextStyle(color: Colors.green)),
-                    TextSpan(text: "e", style: TextStyle(color: Colors.red)),
-                  ],
+              SizedBox(
+                height: 24, width: 24,
+                child: Checkbox(
+                  value: _keepLogged,
+                  activeColor: const Color(0xFF4A0E60),
+                  onChanged: (val) => setState(() => _keepLogged = val!),
                 ),
               ),
-              const SizedBox(width: 10),
-              const Text(
-                "Sign in with Google",
-                style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+              const SizedBox(width: 8),
+              const Text("Keep me logged in", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             ],
           ),
-        ),
+        const SizedBox(height: 30),
 
+        // ACTION BUTTON (Login / Register)
+        ElevatedButton(
+          onPressed: authViewModel.isLoading
+              ? null
+              : () async {
+                  bool success;
+                  if (_isLoginMode) {
+                    success = await authViewModel.login(
+                      _emailController.text,
+                      _passwordController.text,
+                    );
+                  } else {
+                    success = await authViewModel.register(
+                      _emailController.text,
+                      _passwordController.text,
+                    );
+                  }
+
+                  if (success && mounted) {
+                    // Navigate back to HomePage or Show success
+                     ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(_isLoginMode ? "Login Successful!" : "Account Created!")),
+                    );
+                    Navigator.pop(context); // Go back to Home
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF330C48),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          ),
+          child: authViewModel.isLoading
+              ? const SizedBox(
+                  height: 20, width: 20, 
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Text(_isLoginMode ? "Sign in" : "Register", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ),
+        
         const SizedBox(height: 40),
 
-        // Footer Link
+        // Footer Link (Toggle Mode)
         Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Text("Need an account? ", style: TextStyle(color: Colors.grey)),
-              Text(
-                "Create one",
-                style: TextStyle(
-                  color: Color(0xFF4A0E60),
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
+            children: [
+              Text(_isLoginMode ? "Need an account? " : "Already have an account? ", style: const TextStyle(color: Colors.grey)),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isLoginMode = !_isLoginMode;
+                    // Clear errors when switching
+                    // Note: In a real app, you might want a method in ViewModel to clear error
+                  });
+                },
+                child: Text(
+                  _isLoginMode ? "Create one" : "Sign in",
+                  style: const TextStyle(
+                    color: Color(0xFF4A0E60),
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ],
