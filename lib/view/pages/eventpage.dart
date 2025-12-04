@@ -21,7 +21,7 @@ class Eventpage extends StatelessWidget {
         child: Column(
           children: [
             // 2. Pass the isLoggedIn state to the Header Section
-            HeaderSection(isLoggedIn: authViewModel.isLoggedIn),
+            EventHeader(isLoggedIn: authViewModel.isLoggedIn),
 
             // Featured Events Section
             const FeaturedEventsSection(),
@@ -35,104 +35,6 @@ class Eventpage extends StatelessWidget {
   }
 }
 
-// ==============================================================================
-// 1️⃣ HEADER SECTION (With Login Logic)
-// ==============================================================================
-class HeaderSection extends StatelessWidget {
-  final bool isLoggedIn; // Variable to hold state
-
-  const HeaderSection({super.key, required this.isLoggedIn});
-
-  @override
-  Widget build(BuildContext context) {
-    final double width = MediaQuery.of(context).size.width;
-    final bool isDesktop = width > 800;
-
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F172A), // Dark Navy
-            Color(0xFF360C4C), // Deep Purple
-          ],
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: isDesktop ? 80.0 : 20.0, vertical: 30),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Navigation Bar ---
-            Navbar(isLoggedIn: isLoggedIn, activePage: "Event"),
-
-            const SizedBox(height: 80),
-
-            // --- Hero Text ---
-            const Text(
-              "Find Your Next Experience",
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 18,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Discover & Promote\nUpcoming Events",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                height: 1.2,
-              ),
-            ),
-
-            const SizedBox(height: 50),
-
-            // --- Search Bar ---
-            Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 700),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.purpleAccent.withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    )
-                  ],
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search the event",
-                    border: InputBorder.none,
-                    icon: const Icon(Icons.search,
-                        color: Colors.black87, size: 28),
-                    suffixIcon: Transform.rotate(
-                      angle: -0.7,
-                      child: const Icon(Icons.send, color: Color(0xFF360C4C)),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 80),
-          ],
-        ),
-      ),
-    );
-  }
-
-  
-}
 
 // ==============================================================================
 // 2️⃣ FEATURED EVENTS SECTION

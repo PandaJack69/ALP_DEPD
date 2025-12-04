@@ -22,7 +22,7 @@ class EventHeader extends StatelessWidget {
           Navbar(isLoggedIn: isLoggedIn, activePage: "Event"),
           const SizedBox(height: 60),
           const Text(
-            "AAA Upcoming \n Events",
+            "Upcoming \nEvents",
             style: TextStyle(
               color: Colors.white,
               fontSize: 36,

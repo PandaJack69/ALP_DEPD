@@ -28,7 +28,7 @@ class HomeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            "AAA Discover & Promote\nUpcoming Events",
+            "Discover & Promote\nUpcoming Events",
             style: TextStyle(
               color: Colors.white,
               fontSize: 36,
