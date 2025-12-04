@@ -2,24 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:gradient_borders/gradient_borders.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  final bool isLoggedIn;
+  final VoidCallback onLoginPressed;
+  final VoidCallback onRegisterPressed;
+  final VoidCallback onProfilePressed;
+  final VoidCallback? onHomePressed;
+  final VoidCallback? onEventPressed;
+  final VoidCallback? onCompetitionPressed;
+  final VoidCallback? onPengMasPressed;
+
+  const HomeHeader({
+    super.key,
+    required this.isLoggedIn,
+    required this.onLoginPressed,
+    required this.onRegisterPressed,
+    required this.onProfilePressed,
+    this.onHomePressed,
+    this.onEventPressed,
+    this.onCompetitionPressed,
+    this.onPengMasPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final bool isDesktop = width > 800;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 80 : 24,
+        vertical: 40,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [Color(0xFF3F054F), Color(0xFF291F51), Color(0xFF103D52)],
+          colors: [
+            Color(0xFF3F054F),
+            Color(0xFF291F51),
+            Color(0xFF103D52),
+          ],
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildNavbar(),
+          _buildNavbar(isDesktop),
           const SizedBox(height: 60),
           const Text(
             "Find Your Next Experience",
@@ -27,15 +56,15 @@ class HomeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            "AAA Discover & Promote\nUpcoming Events",
+            "Discover & Promote\nUpcoming Events",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 36,
+              fontSize: 42,
               fontWeight: FontWeight.bold,
               height: 1.2,
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 40),
           _buildSearchBar(),
         ],
       ),
@@ -43,46 +72,91 @@ class HomeHeader extends StatelessWidget {
   }
 
   // ----------------------------- NAVBAR -----------------------------
-  Widget _buildNavbar() {
+  Widget _buildNavbar(bool isDesktop) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text(
           "The Event",
           style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
+        const Spacer(),
 
-        Row(
-          children: [
-            _navItem("Home"),
-            _navItem("Event"),
-            _navItem("Competition"),
-            _navItem("PengMas"),
-          ],
-        ),
-
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white24,
-            borderRadius: BorderRadius.circular(20),
+        // Desktop navbar links
+        if (isDesktop)
+          Row(
+            children: [
+              _navItem("Home", onPressed: onHomePressed),
+              _navItem("Event", onPressed: onEventPressed),
+              _navItem("Competition", onPressed: onCompetitionPressed),
+              _navItem("PengMas", onPressed: onPengMasPressed),
+            ],
           ),
-          child: const Text("Profile", style: TextStyle(color: Colors.white)),
-        ),
+
+        const SizedBox(width: 20),
+
+        // ---------------- LOGIN / PROFILE BUTTON ----------------
+        if (isLoggedIn)
+          ElevatedButton(
+            onPressed: onProfilePressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text("Profile"),
+          )
+        else
+          Row(
+            children: [
+              // Login Button
+              ElevatedButton(
+                onPressed: onLoginPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF360C4C),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text("Log In"),
+              ),
+              const SizedBox(width: 10),
+
+              // Register Button
+              ElevatedButton(
+                onPressed: onRegisterPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text("Register"),
+              ),
+            ],
+          ),
       ],
     );
   }
 
-  Widget _navItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white70, fontSize: 15),
+  Widget _navItem(String text, {VoidCallback? onPressed}) {
+    return InkWell(
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.white70, fontSize: 15),
+        ),
       ),
     );
   }
@@ -92,51 +166,41 @@ class HomeHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       height: 55,
-
       decoration: BoxDecoration(
-        color: Colors.white, // ← plain white background
+        color: Colors.white,
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEC83BB).withOpacity(0.6), // soft pink glow
-            blurRadius: 25, // how soft the glow is
-            spreadRadius: 2, // how far the glow spreads
-            offset: const Offset(0, 0), // centered glow
+            color: const Color(0xFFEC83BB).withOpacity(0.6),
+            blurRadius: 25,
+            spreadRadius: 2,
+            offset: const Offset(0, 0),
           ),
         ],
         border: GradientBoxBorder(
           gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
             colors: [
-              Color(0xFFEC82B9), // pink
-              Color(0xFFB763DD), // purple
+              Color(0xFFEC82B9),
+              Color(0xFFB763DD),
             ],
           ),
           width: 2,
         ),
       ),
-
-      // decoration: BoxDecoration(
-      //   color: Colors.white.withOpacity(0.15),
-      //   borderRadius: BorderRadius.circular(40),
-      //   border: Border.all(color: Colors.white30),
-      // ),
       child: Row(
         children: [
           const Icon(Icons.search, color: Color(0xFF263238)),
           const SizedBox(width: 10),
           const Expanded(
             child: TextField(
-              style: TextStyle(color: Color(0xFF263238)),
               decoration: InputDecoration(
+                border: InputBorder.none,
                 hintText: "Search events",
                 hintStyle: TextStyle(color: Color(0xFF263238)),
-                border: InputBorder.none,
               ),
             ),
           ),
-          Icon(Icons.send, color: Color(0xFF263238).withOpacity(0.9)),
+          const Icon(Icons.send, color: Color(0xFF263238)),
         ],
       ),
     );
