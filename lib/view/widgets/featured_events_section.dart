@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'event_card.dart';
+part of 'pages.dart';
 
 class FeaturedEventsSection extends StatelessWidget {
   const FeaturedEventsSection({super.key});

@@ -2,10 +2,10 @@ import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/authviewmodel.dart';
+// If you have a register page
 
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class EventPage extends StatelessWidget {
+  const EventPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +16,9 @@ class HomePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            HomeHeader(
+             EventHeader(
               isLoggedIn: authViewModel.isLoggedIn,
             ),
-            
             // Featured Events Section
             const FeaturedEventsSection(),
             
