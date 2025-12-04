@@ -1,10 +1,10 @@
 part of 'pages.dart';
 
 
-class HomeHeader extends StatelessWidget {
+class EventHeader extends StatelessWidget {
   final bool isLoggedIn;
 
-  const HomeHeader({
+  const EventHeader({
     super.key,
     required this.isLoggedIn,
 
@@ -62,7 +62,7 @@ class HomeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            "Discover & Promote\nUpcoming Events",
+            "Upcoming\nEvents",
             style: TextStyle(
               color: Colors.white,
               fontSize: 42,
