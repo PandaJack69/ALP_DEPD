@@ -3,11 +3,19 @@ part of 'pages.dart';
 
 class HomeHeader extends StatelessWidget {
   final bool isLoggedIn;
+  
+  // ADD THESE CALLBACKS
+  final VoidCallback? onLoginPressed;
+  final VoidCallback? onRegisterPressed;
+  final VoidCallback? onProfilePressed;
 
   const HomeHeader({
     super.key,
     required this.isLoggedIn,
-
+    // ADD THEM TO CONSTRUCTOR
+    this.onLoginPressed,
+    this.onRegisterPressed,
+    this.onProfilePressed,
   });
 
   @override
@@ -38,27 +46,18 @@ class HomeHeader extends StatelessWidget {
           AppNavbar(
             isLoggedIn: isLoggedIn,
             onHomePressed: () {
-              Navigator.pushReplacementNamed(context, "/home");
+              // Default navigation or pass this in too if you want
             },
-            onEventPressed: () {
-              Navigator.pushReplacementNamed(context, "/event");
-            },
-            onCompetitionPressed: () {
-              Navigator.pushReplacementNamed(context, "/competition");
-            },
-            onPengMasPressed: () {
-              Navigator.pushReplacementNamed(context, "/pengmas");
-            },
+            onEventPressed: () {},
+            onCompetitionPressed: () {},
+            onPengMasPressed: () {},
 
-            onLoginPressed: () {
-              Navigator.pushReplacementNamed(context, "/login");
-            },
-            onRegisterPressed: () {
-              Navigator.pushReplacementNamed(context, "/register");
-            },
-            onProfilePressed: () {
-              Navigator.pushReplacementNamed(context, "/profile");
-            },
+            // PASS THE FUNCTIONS DOWN HERE
+            // If the parent (HomePage) provides a function, use it. 
+            // Otherwise, do nothing or use a default.
+            onLoginPressed: onLoginPressed ?? () {},
+            onRegisterPressed: onRegisterPressed ?? () {},
+            onProfilePressed: onProfilePressed ?? () {},
           ),
           const SizedBox(height: 16),
           const Text(
@@ -76,7 +75,6 @@ class HomeHeader extends StatelessWidget {
       ),
     );
   }
-
 
   // --------------------------- SEARCH BAR ---------------------------
   Widget _buildSearchBar() {

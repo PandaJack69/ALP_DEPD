@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Import Provider
-import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
+import 'package:provider/provider.dart';
+import '../../viewmodel/authviewmodel.dart';
+import 'homepage.dart'; // Import HomePage for navigation
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+  // Add a parameter to control the starting mode
+  final bool startInRegisterMode;
+
+  const LoginPage({
+    super.key, 
+    this.startInRegisterMode = false, // Defaults to Login mode
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +18,9 @@ class LoginPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
+          // Responsive Check
           if (constraints.maxWidth > 800) {
+            // DESKTOP: Split Screen
             return Row(
               children: [
                 const Expanded(flex: 5, child: LeftSideHero()),
@@ -20,9 +29,10 @@ class LoginPage extends StatelessWidget {
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 500),
-                      child: const Padding(
-                        padding: EdgeInsets.all(40.0),
-                        child: SignInForm(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(40.0),
+                        // Pass the mode to the form
+                        child: SignInForm(startInRegisterMode: startInRegisterMode),
                       ),
                     ),
                   ),
@@ -30,10 +40,11 @@ class LoginPage extends StatelessWidget {
               ],
             );
           } else {
-            return const Center(
+            // MOBILE: Form Only
+            return Center(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(24.0),
-                child: SignInForm(),
+                padding: const EdgeInsets.all(24.0),
+                child: SignInForm(startInRegisterMode: startInRegisterMode),
               ),
             );
           }
@@ -43,7 +54,9 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-// LeftSideHero remains exactly the same...
+// ---------------------------------------------------------------------------
+// LEFT SIDE HERO (Unchanged - Keeps design consistent)
+// ---------------------------------------------------------------------------
 class LeftSideHero extends StatelessWidget {
   const LeftSideHero({super.key});
   @override
@@ -86,35 +99,41 @@ class LeftSideHero extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// THE UPDATED FORM WITH LOGIC
+// SIGN IN FORM (Handles logic for both Login and Register)
 // ---------------------------------------------------------------------------
 class SignInForm extends StatefulWidget {
-  const SignInForm({super.key});
+  final bool startInRegisterMode;
+
+  const SignInForm({super.key, required this.startInRegisterMode});
 
   @override
   State<SignInForm> createState() => _SignInFormState();
 }
 
 class _SignInFormState extends State<SignInForm> {
-  // Controllers to capture text input
   final TextEditingController _emailController = TextEditingController(text: "Violet@gmail.com");
   final TextEditingController _passwordController = TextEditingController();
   
   bool _keepLogged = false;
   bool _obscurePassword = true;
-  
-  // Toggle between Login and Register mode
-  bool _isLoginMode = true; 
+  late bool _isLoginMode; // State to track mode
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize based on what was passed in
+    _isLoginMode = !widget.startInRegisterMode;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Access the ViewModel
     final authViewModel = Provider.of<AuthViewModel>(context);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // 1. Dynamic Title
         Text(
           _isLoginMode ? "Sign in" : "Create Account",
           style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87),
@@ -128,7 +147,7 @@ class _SignInFormState extends State<SignInForm> {
         ),
         const SizedBox(height: 40),
 
-        // Show Error Message if exists
+        // 2. Error Message
         if (authViewModel.errorMessage != null)
           Container(
             padding: const EdgeInsets.all(10),
@@ -137,7 +156,7 @@ class _SignInFormState extends State<SignInForm> {
             child: Text(authViewModel.errorMessage!, style: const TextStyle(color: Colors.red)),
           ),
 
-        // Email Field
+        // 3. Email Input
         TextFormField(
           controller: _emailController,
           decoration: InputDecoration(
@@ -152,7 +171,7 @@ class _SignInFormState extends State<SignInForm> {
         ),
         const SizedBox(height: 20),
 
-        // Password Field
+        // 4. Password Input
         TextFormField(
           controller: _passwordController,
           obscureText: _obscurePassword,
@@ -167,7 +186,7 @@ class _SignInFormState extends State<SignInForm> {
         ),
         const SizedBox(height: 15),
 
-        // Checkbox
+        // 5. Checkbox (Only show in Login Mode)
         if (_isLoginMode)
           Row(
             children: [
@@ -185,7 +204,7 @@ class _SignInFormState extends State<SignInForm> {
           ),
         const SizedBox(height: 30),
 
-        // ACTION BUTTON (Login / Register)
+        // 6. Action Button (Login OR Register)
         ElevatedButton(
           onPressed: authViewModel.isLoading
               ? null
@@ -204,11 +223,15 @@ class _SignInFormState extends State<SignInForm> {
                   }
 
                   if (success && mounted) {
-                    // Navigate back to HomePage or Show success
-                     ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(_isLoginMode ? "Login Successful!" : "Account Created!")),
                     );
-                    Navigator.pop(context); // Go back to Home
+                    
+                    // NAVIGATE TO HOME on success
+                    Navigator.pushReplacement(
+                      context, 
+                      MaterialPageRoute(builder: (context) => const HomePage()),
+                    );
                   }
                 },
           style: ElevatedButton.styleFrom(
@@ -226,7 +249,7 @@ class _SignInFormState extends State<SignInForm> {
         
         const SizedBox(height: 40),
 
-        // Footer Link (Toggle Mode)
+        // 7. Toggle Link at bottom
         Center(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -236,8 +259,6 @@ class _SignInFormState extends State<SignInForm> {
                 onTap: () {
                   setState(() {
                     _isLoginMode = !_isLoginMode;
-                    // Clear errors when switching
-                    // Note: In a real app, you might want a method in ViewModel to clear error
                   });
                 },
                 child: Text(

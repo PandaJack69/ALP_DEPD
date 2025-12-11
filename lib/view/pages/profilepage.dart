@@ -1,19 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodel/authviewmodel.dart';
+import '../widgets/pages.dart'; 
+import 'homepage.dart'; 
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 1. Access the ViewModel
+    final authViewModel = context.watch<AuthViewModel>();
+    
+    // 2. Logic: Dynamic Name from Email
+    // Default to "GUEST" if null, otherwise clean up the email string
+    String displayName = "GUEST";
+    String email = "";
+    
+    if (authViewModel.userEmail != null) {
+      email = authViewModel.userEmail!;
+      // Take part before '@', replace dots/underscores with space, uppercase
+      if (email.contains('@')) {
+        displayName = email.split('@')[0]
+            .replaceAll(RegExp(r'[._]'), ' ')
+            .toUpperCase();
+      } else {
+        displayName = email;
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. Header (Navbar only)
-            const _ProfileHeader(),
+            // ================= HEADER (Navbar Only) =================
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: [
+                    Color(0xFF3F054F),
+                    Color(0xFF291F51),
+                    Color(0xFF103D52),
+                  ],
+                ),
+              ),
+              child: AppNavbar(
+                isLoggedIn: authViewModel.isLoggedIn,
+                
+                // --- FIX: Explicit Navigation to Home ---
+                onHomePressed: () {
+                  Navigator.pushReplacement(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const HomePage())
+                  );
+                },
+                // Placeholders for other pages (Add similar logic when you create those pages)
+                onEventPressed: () {}, 
+                onCompetitionPressed: () {},
+                onPengMasPressed: () {},
 
-            // 2. Profile Content
+                // Login/Register shouldn't be clicked here (since we are logged in), 
+                // but we add safety navigation just in case.
+                onLoginPressed: () {}, 
+                onRegisterPressed: () {},
+                
+                // Already on Profile
+                onProfilePressed: () {}, 
+              ),
+            ),
+
+            // ================= PROFILE CONTENT =================
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 20),
               child: ConstrainedBox(
@@ -21,7 +82,7 @@ class ProfilePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title Section
+                    // Title
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -36,13 +97,13 @@ class ProfilePage extends StatelessWidget {
                         Container(
                           width: 120,
                           height: 4,
-                          color: const Color(0xFF0F172A), // Underline style
+                          color: const Color(0xFF0F172A),
                         )
                       ],
                     ),
                     const SizedBox(height: 40),
 
-                    // Avatar & Name Section
+                    // Avatar & Dynamic Name
                     Center(
                       child: Column(
                         children: [
@@ -52,39 +113,52 @@ class ProfilePage extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               image: const DecorationImage(
-                                image: NetworkImage("https://picsum.photos/id/64/200/200"), // Placeholder Avatar
+                                image: NetworkImage("https://picsum.photos/id/64/200/200"),
                                 fit: BoxFit.cover,
                               ),
                               border: Border.all(color: Colors.deepPurple, width: 3),
                             ),
                           ),
                           const SizedBox(height: 15),
-                          const Text(
-                            "Violet Evergarden",
-                            style: TextStyle(
+                          
+                          // --- DYNAMIC NAME DISPLAYED HERE ---
+                          Text(
+                            displayName, 
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF0F172A),
                             ),
                           ),
-                          const SizedBox(height: 15),
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF360C4C),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                            ),
-                            child: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
-                          )
+                          
+                          const SizedBox(height: 10),
+                          
+                          // --- LOGOUT BUTTON ---
+                          TextButton.icon(
+                            onPressed: () async {
+                              await authViewModel.logout();
+                              if (context.mounted) {
+                                // Navigate back to Login or Home after logout
+                                Navigator.pushReplacement(
+                                  context, 
+                                  MaterialPageRoute(builder: (context) => const HomePage())
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.logout, color: Colors.red),
+                            label: const Text("Log Out", style: TextStyle(color: Colors.red)),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 40),
 
-                    // Form Fields
-                    _buildLabel("Nama"),
-                    _buildTextField("Violet Evergarden"),
+                    // Forms (Read-only Email, Dynamic Name)
+                    _buildLabel("Email"), 
+                    _buildTextField(email, enabled: false), // Show actual email
+
+                    _buildLabel("Nama Lengkap"),
+                    _buildTextField(displayName), // Pre-fill with dynamic name
 
                     _buildLabel("Universitas"),
                     _buildTextField("Universitas Ciputra"),
@@ -92,27 +166,22 @@ class ProfilePage extends StatelessWidget {
                     _buildLabel("Jurusan"),
                     _buildTextField("Informatika - FSD"),
 
-                    _buildLabel("Angkatan"),
-                    _buildTextField("2023"),
-
                     _buildLabel("No. Telpon"),
                     _buildTextField("082226563528"),
 
-                    _buildLabel("CV"),
-                    _buildTextField("...."),
-
-                    _buildLabel("Portfolio"),
-                    _buildTextField("...."),
-
                     const SizedBox(height: 40),
 
-                    // Bottom Buttons (Cancel / Save)
+                    // Buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         OutlinedButton(
                           onPressed: () {
-                            Navigator.pop(context); // Go back
+                            // Cancel goes back to Home
+                            Navigator.pushReplacement(
+                              context, 
+                              MaterialPageRoute(builder: (context) => const HomePage())
+                            );
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFF360C4C), width: 2),
@@ -122,9 +191,11 @@ class ProfilePage extends StatelessWidget {
                           child: const Text("Cancel", style: TextStyle(color: Color(0xFF360C4C), fontWeight: FontWeight.bold)),
                         ),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            // Save Logic would go here
+                          },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFC2185B), // Pinkish Red
+                            backgroundColor: const Color(0xFFC2185B),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
                           ),
@@ -137,22 +208,21 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
 
-            // 3. Footer
-            const _ProfileFooter(),
+            // ================= FOOTER =================
+            const FooterSection(),
           ],
         ),
       ),
     );
   }
 
-  // Helper widget for Labels (Pink Color)
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0, top: 15.0),
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFFC2185B), 
+          color: Color(0xFFC2185B),
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
@@ -160,8 +230,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // Helper widget for TextFields
-  Widget _buildTextField(String initialValue) {
+  Widget _buildTextField(String initialValue, {bool enabled = true}) {
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -174,8 +243,9 @@ class ProfilePage extends StatelessWidget {
       ),
       child: TextFormField(
         initialValue: initialValue,
+        enabled: enabled,
         decoration: InputDecoration(
-          fillColor: Colors.white,
+          fillColor: enabled ? Colors.white : Colors.grey[200],
           filled: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           border: OutlineInputBorder(
@@ -186,79 +256,6 @@ class ProfilePage extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
             borderSide: const BorderSide(color: Colors.black12),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- Header for Profile Page ---
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFF0F172A), // Dark Navy Background
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-      child: Row(
-        children: [
-          const Text(
-            "The Event",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          const Spacer(),
-          // Navigation Links
-          _navLink("Home", context),
-          _navLink("Event", context),
-          _navLink("Competition", context),
-          _navLink("PengMas", context),
-          const SizedBox(width: 20),
-          // Profile Button (Active State)
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            child: const Text("Profile", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _navLink(String text, BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-      child: TextButton(
-        onPressed: () {
-            if(text == "Home") Navigator.pop(context); // Basic navigation back
-        },
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-        ),
-      ),
-    );
-  }
-}
-
-// --- Footer for Profile Page ---
-class _ProfileFooter extends StatelessWidget {
-  const _ProfileFooter();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: const Color(0xFF1E1135),
-      padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 40),
-      child: const Center(
-        child: Text(
-          "© 2025 The Event. All rights reserved",
-          style: TextStyle(color: Colors.white54, fontSize: 12),
         ),
       ),
     );
