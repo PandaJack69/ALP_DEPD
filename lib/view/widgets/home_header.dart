@@ -44,7 +44,12 @@ class HomeHeader extends StatelessWidget {
               Navigator.pushReplacementNamed(context, "/event");
             },
             onCompetitionPressed: () {
-              Navigator.pushReplacementNamed(context, "/competition");
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const EventDetailPage(),
+                ),
+              );
             },
             onPengMasPressed: () {
               Navigator.pushReplacementNamed(context, "/pengmas");

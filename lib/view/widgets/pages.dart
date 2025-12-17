@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gradient_borders/gradient_borders.dart';
+import '../pages/eventDetailPage.dart';
+
 
 
 part 'event_card.dart';
