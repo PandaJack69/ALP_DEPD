@@ -5,8 +5,8 @@ import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
 // import 'profilepage.dart'; 
 import 'package:alp_depd/view/widgets/pages.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class Eventpage extends StatelessWidget {
+  const Eventpage({super.key});
 
 
   @override
@@ -21,7 +21,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           children: [
             // 2. Pass the isLoggedIn state to the Header Section
-            HomeHeader(isLoggedIn: authViewModel.isLoggedIn),
+            EventHeader(isLoggedIn: authViewModel.isLoggedIn),
 
             // Featured Events Section
             const FeaturedEventsSection(),

@@ -1,9 +1,8 @@
 part of 'pages.dart';
 
-class HomeHeader extends StatelessWidget {
-
+class EventHeader extends StatelessWidget {
   final bool isLoggedIn;
-  const HomeHeader({super.key, required this.isLoggedIn});
+  const EventHeader({super.key, required this.isLoggedIn,});
 
   @override
   Widget build(BuildContext context) {
@@ -20,15 +19,10 @@ class HomeHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Navbar(isLoggedIn: isLoggedIn, activePage: "Home"),
+          Navbar(isLoggedIn: isLoggedIn, activePage: "Event"),
           const SizedBox(height: 60),
           const Text(
-            "Find Your Next Experience",
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Discover & Promote\nUpcoming Events",
+            "Upcoming \nEvents",
             style: TextStyle(
               color: Colors.white,
               fontSize: 36,
