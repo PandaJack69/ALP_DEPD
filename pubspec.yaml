@@ -38,6 +38,9 @@ dependencies:
   provider: ^6.1.5+1
   file_picker: ^8.1.7 # Tambahkan ini
   open_filex: ^4.5.0  # Tambahkan ini juga karena Anda menggunakannya di kode
+  intl: ^0.20.2  # Tambahkan baris ini (versi terbaru saat ini)
+  firebase_core: ^3.15.2 # Versi terbaru saat ini
+  firebase_auth: ^5.7.0  # Versi terbaru saat ini 
 
 dev_dependencies:
   flutter_test:
