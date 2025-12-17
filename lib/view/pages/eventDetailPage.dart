@@ -2,7 +2,6 @@ import 'package:alp_depd/view/pages/eventpage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../widgets/pages.dart';
-import '../widgets/footer_section.dart';
 
 class EventDetailPage extends StatelessWidget {
   const EventDetailPage({super.key});
