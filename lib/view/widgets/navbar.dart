@@ -1,117 +1,124 @@
 part of 'pages.dart';
 
-class AppNavbar extends StatelessWidget {
+class Navbar extends StatelessWidget {
   final bool isLoggedIn;
+  final String activePage;
 
-  final VoidCallback? onHomePressed;
-  final VoidCallback? onEventPressed;
-  final VoidCallback? onCompetitionPressed;
-  final VoidCallback? onPengMasPressed;
-
-  final VoidCallback onLoginPressed;
-  final VoidCallback onRegisterPressed;
-  final VoidCallback onProfilePressed;
-
-  const AppNavbar({
+  const Navbar({
     super.key,
     required this.isLoggedIn,
-    required this.onLoginPressed,
-    required this.onRegisterPressed,
-    required this.onProfilePressed,
-    this.onHomePressed,
-    this.onEventPressed,
-    this.onCompetitionPressed,
-    this.onPengMasPressed,
+    this.activePage = "Home",
   });
+
+  Widget _navLink(
+    BuildContext context,
+    String text,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (isActive)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                height: 2,
+                width: 20,
+                color: Colors.white,
+              )
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final bool isDesktop = width > 800;
 
-    return Row(
-      children: [
-        const Text(
-          "The Event",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+    return Container(
+      // --- PENERAPAN GRADASI ---
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xff123C52),
+            Color(0xff3F054F),
+          ],
         ),
-
-        const Spacer(),
-
-        // ================= MENU DESKTOP =================
-        if (isDesktop)
-          Row(
-            children: [
-              _navItem("Home", onPressed: onHomePressed),
-              _navItem("Event", onPressed: onEventPressed),
-              _navItem("Competition", onPressed: onCompetitionPressed),
-              _navItem("PengMas", onPressed: onPengMasPressed),
-            ],
+      ),
+      child: Row(
+        children: [
+          const Text(
+            "The Event",
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
           ),
+          const Spacer(),
 
-        const SizedBox(width: 20),
+          if (isDesktop) ...[
+            _navLink(context, "Home", activePage == "Home", () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const HomePage()));
+            }),
+            _navLink(context, "Event", activePage == "Event", () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const Eventpage()));
+            }),
+          ],
 
-        // ================= LOGIN / PROFILE =================
-        if (isLoggedIn)
-          ElevatedButton(
-            onPressed: onProfilePressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              side: const BorderSide(color: Colors.white),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          const SizedBox(width: 20),
+
+          if (isLoggedIn)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
+              child: const Text("Profile"),
+            )
+          else
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF360C4C),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text("Log In"),
             ),
-            child: const Text("Profile"),
-          )
-        else
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: onLoginPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF360C4C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text("Log In"),
-              ),
-              const SizedBox(width: 10),
-
-              ElevatedButton(
-                onPressed: onRegisterPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text("Register"),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget _navItem(String text, {VoidCallback? onPressed}) {
-    return InkWell(
-      onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white70, fontSize: 15),
-        ),
+        ],
       ),
     );
   }

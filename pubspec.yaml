@@ -76,6 +76,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - assets/Image/testing.png
 
   fonts:
     - family: VisueltPro
