@@ -3,6 +3,8 @@ import 'package:alp_depd/view/pages/homepage.dart';
 import 'package:alp_depd/view/pages/registrationpage.dart';
 import 'package:flutter/material.dart';
 import 'package:gradient_borders/gradient_borders.dart';
+import 'package:alp_depd/model/eventmodel.dart';
+import 'package:alp_depd/view/pages/eventDetailPage.dart';
 
 part 'home_header.dart';
 part 'event_card.dart';

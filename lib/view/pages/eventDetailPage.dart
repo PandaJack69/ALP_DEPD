@@ -1,50 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../widgets/pages.dart';
-import '../widgets/footer_section.dart';
+import '../../model/eventmodel.dart';
 
 class EventDetailPage extends StatelessWidget {
-  const EventDetailPage({super.key});
+  final EventModel event;
+
+  const EventDetailPage({super.key, required this.event});
 
   @override
   Widget build(BuildContext context) {
-    // ================= DUMMY DATA =================
-    final eventName = 'Tech Innovate Summit 2025';
-    final description =
-        'Tech Innovate Summit adalah event teknologi tahunan yang '
-        'mempertemukan developer, designer, dan tech enthusiast '
-        'untuk belajar dan berkolaborasi.';
-
-    final posterUrl =
-        'https://images.unsplash.com/photo-1521737604893-d14cc237f11d';
-
-    final organization = 'Tech Community Indonesia';
-    final openReg = DateTime(2025, 1, 1);
-    final closeReg = DateTime(2025, 2, 1);
-    final eventDate = DateTime(2025, 2, 20);
-
-    final benefits = [
-      'E-Certificate',
-      'Networking Opportunity',
-      'Knowledge Sharing',
-      'Free Merchandise',
-    ];
-
-    final divisions = [
-      'Design',
-      'Development',
-      'Marketing',
-      'Documentation',
-    ];
-
-    final diff = eventDate.difference(DateTime.now());
     final df = DateFormat('dd MMM yyyy');
+    final diff = event.eventDate.difference(DateTime.now());
 
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ================= HERO =================
+            // HERO
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 100),
@@ -56,13 +28,12 @@ class EventDetailPage extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    eventName,
+                    event.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        color: Colors.white,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -77,7 +48,7 @@ class EventDetailPage extends StatelessWidget {
               ),
             ),
 
-            // ================= DETAIL =================
+            // CONTENT
             Padding(
               padding: const EdgeInsets.all(60),
               child: Row(
@@ -86,7 +57,7 @@ class EventDetailPage extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.network(
-                      posterUrl,
+                      event.posterUrl,
                       width: 350,
                       height: 480,
                       fit: BoxFit.cover,
@@ -97,15 +68,7 @@ class EventDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          eventName,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Text(description),
+                        Text(event.description),
                         const SizedBox(height: 30),
 
                         const Text(
@@ -113,28 +76,28 @@ class EventDetailPage extends StatelessWidget {
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        _info('Organization', organization),
-                        _info('Open Register', df.format(openReg)),
-                        _info('Close Register', df.format(closeReg)),
-                        _info('Event Day', df.format(eventDate)),
+                        _info('Organization', event.organization),
+                        _info('Open Register', df.format(event.openRegDate)),
+                        _info('Close Register', df.format(event.closeRegDate)),
+                        _info('Event Day', df.format(event.eventDate)),
 
                         const SizedBox(height: 30),
                         const Text(
-                          'Event Benefit',
+                          'Benefits',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        ...benefits.map((b) => Text('• $b')),
+                        ...event.benefits.map((b) => Text('• $b')),
 
                         const SizedBox(height: 30),
                         const Text(
-                          'Divisi Dibuka',
+                          'Divisions',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Wrap(
                           spacing: 10,
-                          children: divisions
+                          children: event.divisions
                               .map((d) => Chip(label: Text(d)))
                               .toList(),
                         ),
@@ -144,31 +107,22 @@ class EventDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-
-            const FooterSection(),
           ],
         ),
       ),
     );
   }
 
-  // ================= HELPER UI =================
   static Widget _count(int v, String l) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Column(
           children: [
-            Text(
-              '$v',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              l,
-              style: const TextStyle(color: Colors.white70),
-            ),
+            Text('$v',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold)),
+            Text(l, style: const TextStyle(color: Colors.white70)),
           ],
         ),
       );
@@ -178,6 +132,7 @@ class EventDetailPage extends StatelessWidget {
         child: Text('$t : $v'),
       );
 }
+
 
 
 // import 'package:flutter/material.dart';

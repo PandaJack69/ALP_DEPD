@@ -5,6 +5,57 @@ class FeaturedEventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ================= DUMMY EVENT =================
+    final events = [
+      EventModel(
+        id: '1',
+        name: 'Leadership 101 | Batch 1',
+        description: 'Event leadership untuk mahasiswa.',
+        posterUrl: 'https://picsum.photos/id/1/400/300',
+        organization: 'Tech Community Indonesia',
+        openRegDate: DateTime(2025, 1, 1),
+        closeRegDate: DateTime(2025, 1, 30),
+        eventDate: DateTime(2025, 2, 20),
+        benefits: ['E-Certificate', 'Networking'],
+        divisions: ['Design', 'Development'],
+      ),
+      EventModel(
+        id: '2',
+        name: 'Hackfest 2025',
+        description: 'Hackathon nasional.',
+        posterUrl: 'https://picsum.photos/id/20/400/300',
+        organization: 'Hack Community',
+        openRegDate: DateTime(2025, 2, 1),
+        closeRegDate: DateTime(2025, 2, 15),
+        eventDate: DateTime(2025, 3, 10),
+        benefits: ['Prize Pool'],
+        divisions: ['Frontend', 'Backend'],
+      ),EventModel(
+        id: '3',
+        name: 'Hackfest 2026',
+        description: 'Hackathon nasional.',
+        posterUrl: 'https://picsum.photos/id/20/400/300',
+        organization: 'Hack Community',
+        openRegDate: DateTime(2026, 2, 1),
+        closeRegDate: DateTime(2026, 2, 15),
+        eventDate: DateTime(2026, 3, 10),
+        benefits: ['Prize Pool'],
+        divisions: ['Frontend', 'Backend'],
+      ),
+      EventModel(
+        id: '4',
+        name: 'NPLC',
+        description: 'Hackathon nasional.',
+        posterUrl: 'https://picsum.photos/id/20/400/300',
+        organization: 'Hack Community',
+        openRegDate: DateTime(2025, 12, 1),
+        closeRegDate: DateTime(2026, 2, 15),
+        eventDate: DateTime(2026, 3, 10),
+        benefits: ['Prize Pool'],
+        divisions: ['Frontend', 'Backend'],
+      ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
       child: Column(
@@ -25,51 +76,19 @@ class FeaturedEventsSection extends StatelessWidget {
           ),
           const SizedBox(height: 50),
 
-          // The Grid of Cards
           Wrap(
             spacing: 30,
             runSpacing: 40,
             alignment: WrapAlignment.center,
-            children: [
-              EventCard(
-                title: "Leadership 101 | Batch 1",
-                tag: "Closing Soon",
+            children: events.map((event) {
+              return EventCard(
+                event: event,
+                tag: 'Closing Soon',
                 tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/1/400/300",
-              ),
-              EventCard(
-                title: "Hackfest 2025",
-                tag: "Closing Soon",
-                tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/20/400/300",
-              ),
-              EventCard(
-                title: "Anggota Muda",
-                tag: "Closing Soon",
-                tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/36/400/300",
-              ),
-              // Row 2
-              EventCard(
-                title: "Leadership 101 | Batch 2",
-                tag: "Coming Soon",
-                tagColor: Colors.orange,
-                imageUrl: "https://picsum.photos/id/48/400/300",
-              ),
-              EventCard(
-                title: "Hackfest 2025",
-                tag: "Just New",
-                tagColor: Colors.purple,
-                imageUrl: "https://picsum.photos/id/60/400/300",
-              ),
-              EventCard(
-                title: "Anggota Muda",
-                tag: "Just New",
-                tagColor: Colors.purple,
-                imageUrl: "https://picsum.photos/id/96/400/300",
-              ),
-            ],
+              );
+            }).toList(),
           ),
+
           const SizedBox(height: 50),
         ],
       ),

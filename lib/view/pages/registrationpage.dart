@@ -1,12 +1,18 @@
-import 'package:alp_depd/view/pages/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/authviewmodel.dart';
-import '../widgets/pages.dart'; // Import Navbar & FooterSection
-import '../widgets/registrationformcard.dart'; // Import class di atas
+import '../widgets/pages.dart';
+import '../widgets/registrationformcard.dart';
+import '../../model/eventmodel.dart';
+import '../../view/widgets/footer_section.dart';
 
 class RegistrationPage extends StatelessWidget {
-  const RegistrationPage({super.key});
+  final EventModel event;
+
+  const RegistrationPage({
+    super.key,
+    required this.event,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,16 +23,16 @@ class RegistrationPage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. Navbar (Latar belakang gradien sudah ada di dalam Navbar.dart)
+            // NAVBAR
             Navbar(
               isLoggedIn: authViewModel.isLoggedIn,
               activePage: "Event",
             ),
 
-            // 2. Konten Form (RegistrationForm yang baru saja dibuat)
-            const RegistrationForm(),
+            // FORM
+            RegistrationForm(event: event),
 
-            // 3. Footer Section
+            // FOOTER
             const FooterSection(),
           ],
         ),
