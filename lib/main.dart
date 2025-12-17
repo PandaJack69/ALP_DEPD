@@ -1,3 +1,4 @@
+import 'package:alp_depd/view/pages/registrationpage.dart';
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
