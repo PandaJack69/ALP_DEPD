@@ -8,3 +8,4 @@ part 'home_header.dart';
 part 'event_card.dart';
 part 'navbar.dart';
 part 'event_header.dart';
+part 'featured_events_section.dart';
