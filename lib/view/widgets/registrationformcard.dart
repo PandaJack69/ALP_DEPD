@@ -93,10 +93,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
   @override
   Widget build(BuildContext context) {
-    // Return Column agar bisa digabung dengan Navbar dan Footer di RegistrationPage
+    // Menggunakan Column agar bisa digabung dengan Navbar dan Footer di RegistrationPage
     return Column(
       children: [
-        // GRADIENT BOX (HEADER)
+        // 1. GRADIENT BOX (HEADER)
         Container(
           width: double.infinity,
           decoration: const BoxDecoration(
@@ -137,7 +137,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
           ),
         ),
 
-        // FORM CARD (OVERLAPPING)
+        // 2. FORM CARD (OVERLAPPING DENGAN TRANSFORM)
         Transform.translate(
           offset: const Offset(0, -80),
           child: ConstrainedBox(
@@ -178,6 +178,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       key: _formKey,
                       child: Column(
                         children: [
+                          // ROW 1: Name & University
                           Row(
                             children: [
                               Expanded(child: buildInput("Your Name", nameController)),
@@ -186,6 +187,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             ],
                           ),
                           const SizedBox(height: 15),
+                          // ROW 2: Major & Year
                           Row(
                             children: [
                               Expanded(child: buildInput("Major", majorController)),
@@ -194,6 +196,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             ],
                           ),
                           const SizedBox(height: 15),
+                          // ROW 3: Phone & Division
                           Row(
                             children: [
                               Expanded(child: buildInput("Phone Number", phoneController)),
@@ -202,6 +205,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             ],
                           ),
                           const SizedBox(height: 25),
+                          // UPLOAD SECTION: CV
                           buildUploadBox(
                             title: "Upload CV",
                             file: cvFile,
@@ -212,6 +216,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             onRemove: () => setState(() => cvFile = null),
                           ),
                           const SizedBox(height: 25),
+                          // UPLOAD SECTION: Portfolio
                           buildUploadBox(
                             title: "Upload Portfolio",
                             file: portfolioFile,
@@ -222,6 +227,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             onRemove: () => setState(() => portfolioFile = null),
                           ),
                           const SizedBox(height: 40),
+                          // SUBMIT BUTTON
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -243,6 +249,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                                     );
                                     return;
                                   }
+                                  // Submit Success
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text("Form Submitted Successfully!"),
@@ -274,6 +281,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
     );
   }
 
+  // Widget Helper untuk Text Input
   Widget buildInput(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,8 +294,14 @@ class _RegistrationFormState extends State<RegistrationForm> {
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade400)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xffA0025B), width: 2)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8), 
+              borderSide: BorderSide(color: Colors.grey.shade400)
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8), 
+              borderSide: const BorderSide(color: Color(0xffA0025B), width: 2)
+            ),
           ),
           validator: (value) => value == null || value.isEmpty ? "Required" : null,
         ),
@@ -295,6 +309,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
     );
   }
 
+  // Widget Helper untuk Dropdown Divisi
   Widget buildDivisionDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,6 +322,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8), 
+              borderSide: BorderSide(color: Colors.grey.shade400)
+            ),
           ),
           items: divisions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
           onChanged: (value) {
@@ -322,7 +341,13 @@ class _RegistrationFormState extends State<RegistrationForm> {
     );
   }
 
-  Widget buildUploadBox({required String title, required PlatformFile? file, required VoidCallback onPick, required VoidCallback onRemove}) {
+  // Widget Helper untuk Box Upload File
+  Widget buildUploadBox({
+    required String title, 
+    required PlatformFile? file, 
+    required VoidCallback onPick, 
+    required VoidCallback onRemove
+  }) {
     bool isImage = file != null && (file.extension == "jpg" || file.extension == "jpeg" || file.extension == "png");
     bool isPDF = file != null && file.extension == "pdf";
 
@@ -333,7 +358,11 @@ class _RegistrationFormState extends State<RegistrationForm> {
         const SizedBox(height: 10),
         Container(
           height: 180,
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(12), color: Colors.white),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade400), 
+            borderRadius: BorderRadius.circular(12), 
+            color: Colors.white
+          ),
           child: Stack(
             children: [
               if (file == null)
@@ -341,7 +370,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Drag here or Click button below", style: TextStyle(color: Colors.black54)),
+                      const Text("Click button below to upload", style: TextStyle(color: Colors.black54)),
                       const SizedBox(height: 15),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff3F054F)),
@@ -362,7 +391,16 @@ class _RegistrationFormState extends State<RegistrationForm> {
                         else if (isPDF) const Icon(Icons.picture_as_pdf, color: Colors.red, size: 50)
                         else const Icon(Icons.insert_drive_file, size: 50, color: Colors.grey),
                         const SizedBox(height: 10),
-                        Text(file.name, style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            file.name, 
+                            style: const TextStyle(fontWeight: FontWeight.bold), 
+                            textAlign: TextAlign.center, 
+                            maxLines: 2, 
+                            overflow: TextOverflow.ellipsis
+                          ),
+                        ),
                       ],
                     ),
                   ),
