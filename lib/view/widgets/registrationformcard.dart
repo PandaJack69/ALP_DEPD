@@ -1,6 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb; // Digunakan untuk mendeteksi platform web
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:open_filex/open_filex.dart';
 import '../../model/eventmodel.dart';
 
 class RegistrationForm extends StatefulWidget {
@@ -37,10 +38,12 @@ class _RegistrationFormState extends State<RegistrationForm> {
   PlatformFile? cvFile;
   PlatformFile? portfolioFile;
 
+  // Fungsi pick file diperbarui dengan withData: true agar bisa preview di Web
   Future<PlatformFile?> pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ["pdf", "jpg", "png", "jpeg"],
+      withData: true, // Sangat penting agar byte data terbaca untuk preview
     );
     if (result != null) return result.files.first;
     return null;
@@ -166,8 +169,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       Row(
                         children: [
                           Expanded(
-                              child:
-                                  buildInput("Your Name", nameController)),
+                              child: buildInput("Your Name", nameController)),
                           const SizedBox(width: 15),
                           Expanded(
                               child: buildInput(
@@ -197,8 +199,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       ),
                       const SizedBox(height: 25),
 
+                      // Upload CV dengan Preview
                       buildUploadBox(
-                        title: "Upload CV",
+                        title: "Upload CV (PDF/IMG)",
                         file: cvFile,
                         onPick: () async {
                           final file = await pickFile();
@@ -208,8 +211,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       ),
                       const SizedBox(height: 25),
 
+                      // Upload Portfolio dengan Preview
                       buildUploadBox(
-                        title: "Upload Portfolio",
+                        title: "Upload Portfolio (PDF/IMG)",
                         file: portfolioFile,
                         onPick: () async {
                           final file = await pickFile();
@@ -279,8 +283,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
       children: [
         Text(label,
             style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xffA0025B))),
+                fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
         const SizedBox(height: 5),
         TextFormField(
           controller: controller,
@@ -288,69 +291,123 @@ class _RegistrationFormState extends State<RegistrationForm> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
       ],
     );
   }
 
+  // Dropdown dengan label "Division" yang jelas
   Widget buildDivisionDropdown() {
-    return DropdownButtonFormField<String>(
-      value: selectedDivision,
-      decoration:
-          InputDecoration(
-              border: OutlineInputBorder(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Division",
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
+        const SizedBox(height: 5),
+        DropdownButtonFormField<String>(
+          value: selectedDivision,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
           ),
-      items: divisions
-          .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-          .toList(),
-      onChanged: (value) {
-        if (value == "Add Custom Division...") {
-          _addCustomDivision();
-        } else {
-          setState(() => selectedDivision = value);
-        }
-      },
-      validator: (v) =>
-          v == null || v == "Add Custom Division..." ? "Required" : null,
+          items: divisions
+              .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+              .toList(),
+          onChanged: (value) {
+            if (value == "Add Custom Division...") {
+              _addCustomDivision();
+            } else {
+              setState(() => selectedDivision = value);
+            }
+          },
+          validator: (v) =>
+              v == null || v == "Add Custom Division..." ? "Required" : null,
+        ),
+      ],
     );
   }
 
+  // Widget Upload Box dengan logika Preview Gambar dan Ikon PDF
   Widget buildUploadBox({
     required String title,
     required PlatformFile? file,
     required VoidCallback onPick,
     required VoidCallback onRemove,
   }) {
+    bool isImage = false;
+    if (file != null) {
+      final ext = file.extension?.toLowerCase();
+      isImage = ["jpg", "jpeg", "png"].contains(ext);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
             style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xffA0025B))),
+                fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
         const SizedBox(height: 10),
-        Container(
-          height: 180,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: file == null
-              ? Center(
-                  child: ElevatedButton(
-                    onPressed: onPick,
-                    child: const Text("Upload File"),
+        Stack(
+          children: [
+            Container(
+              height: 250, // Ukuran diperbesar untuk preview
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey.shade50,
+              ),
+              child: file == null
+                  ? Center(
+                      child: ElevatedButton.icon(
+                        onPressed: onPick,
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text("Select File"),
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: isImage
+                          ? (kIsWeb
+                              ? Image.memory(file.bytes!, fit: BoxFit.contain)
+                              : Image.file(File(file.path!), fit: BoxFit.contain))
+                          : Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.picture_as_pdf,
+                                      size: 50, color: Colors.red),
+                                  const SizedBox(height: 10),
+                                  Text(file.name,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w500)),
+                                  Text("${(file.size / 1024).toStringAsFixed(1)} KB"),
+                                ],
+                              ),
+                            ),
+                    ),
+            ),
+            if (file != null)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: CircleAvatar(
+                  backgroundColor: Colors.red,
+                  radius: 18,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    onPressed: onRemove,
                   ),
-                )
-              : Center(
-                  child: Text(file.name,
-                      textAlign: TextAlign.center),
                 ),
+              ),
+          ],
         ),
       ],
     );
