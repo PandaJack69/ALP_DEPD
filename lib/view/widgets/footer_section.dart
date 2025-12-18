@@ -7,7 +7,7 @@ class FooterSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF1E1135),
+      color: const Color(0xFF1E1135), // Very dark purple/blue
       padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 40),
       child: Wrap(
         spacing: 60,
@@ -23,10 +23,7 @@ class FooterSection extends StatelessWidget {
                 const Text(
                   "The Event",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -48,39 +45,16 @@ class FooterSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text(
-                  "Contact Us",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                Text("Contact Us",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 SizedBox(height: 15),
-                Text(
-                  "theevent@gmail.com",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 2,
-                  ),
-                ),
-                Text(
-                  "Universitas Ciputra Citraland",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 2,
-                  ),
-                ),
-                Text(
-                  "081133112345778890",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 2,
-                  ),
-                ),
+                Text("theevent@gmail.com",
+                    style: TextStyle(color: Colors.white70, fontSize: 12, height: 2)),
+                Text("Universitas Ciputra Citraland",
+                    style: TextStyle(color: Colors.white70, fontSize: 12, height: 2)),
+                Text("081133112345778890",
+                    style: TextStyle(color: Colors.white70, fontSize: 12, height: 2)),
               ],
             ),
           ),
@@ -91,19 +65,12 @@ class FooterSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Subscribe",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                const Text("Subscribe",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 10),
-                const Text(
-                  "Enter your email to get notified about newest event",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                const Text("Enter your email to get notified about newest event",
+                    style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 15),
                 Container(
                   decoration: BoxDecoration(
@@ -135,11 +102,7 @@ class FooterSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(50),
       ),
-      child: Icon(
-        icon,
-        color: const Color(0xFF1E1135),
-        size: 20,
-      ),
+      child: Icon(icon, color: const Color(0xFF1E1135), size: 20),
     );
   }
 }

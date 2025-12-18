@@ -1,11 +1,19 @@
-import 'package:flutter/material.dart';
-import 'event_card.dart';
+part of 'pages.dart';
 
 class FeaturedEventsSection extends StatelessWidget {
   const FeaturedEventsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // ===== AMBIL DATA DARI pages.dart =====
+    final featuredEvents = dummyEvents
+        .where(
+          (e) =>
+              DateTime.now().isAfter(e.openRegDate) &&
+              DateTime.now().isBefore(e.closeRegDate),
+        )
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
       child: Column(
@@ -18,59 +26,35 @@ class FeaturedEventsSection extends StatelessWidget {
               color: Color(0xFF0F172A),
             ),
           ),
+
           const SizedBox(height: 10),
+
           const Text(
-            "This isn't Just an Event, It's the Experience\nEveryone Will Talk About.",
+            "This isn't Just an Event, It's the Experience\n"
+            "Everyone Will Talk About.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, height: 1.5),
+            style: TextStyle(
+              color: Colors.grey,
+              height: 1.5,
+            ),
           ),
+
           const SizedBox(height: 50),
 
-          // The Grid of Cards
+          // ===== EVENT CARD =====
           Wrap(
             spacing: 30,
             runSpacing: 40,
             alignment: WrapAlignment.center,
-            children: [
-              EventCard(
-                title: "Leadership 101 | Batch 1",
+            children: featuredEvents.map((event) {
+              return EventCard(
+                event: event,
                 tag: "Closing Soon",
                 tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/1/400/300",
-              ),
-              EventCard(
-                title: "Hackfest 2025",
-                tag: "Closing Soon",
-                tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/20/400/300",
-              ),
-              EventCard(
-                title: "Anggota Muda",
-                tag: "Closing Soon",
-                tagColor: Colors.pink,
-                imageUrl: "https://picsum.photos/id/36/400/300",
-              ),
-              // Row 2
-              EventCard(
-                title: "Leadership 101 | Batch 2",
-                tag: "Coming Soon",
-                tagColor: Colors.orange,
-                imageUrl: "https://picsum.photos/id/48/400/300",
-              ),
-              EventCard(
-                title: "Hackfest 2025",
-                tag: "Just New",
-                tagColor: Colors.purple,
-                imageUrl: "https://picsum.photos/id/60/400/300",
-              ),
-              EventCard(
-                title: "Anggota Muda",
-                tag: "Just New",
-                tagColor: Colors.purple,
-                imageUrl: "https://picsum.photos/id/96/400/300",
-              ),
-            ],
+              );
+            }).toList(),
           ),
+
           const SizedBox(height: 50),
         ],
       ),
