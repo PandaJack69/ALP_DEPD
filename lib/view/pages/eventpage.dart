@@ -5,6 +5,7 @@ import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
 // import 'profilepage.dart'; 
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:alp_depd/view/widgets/footer_section.dart';
+import 'event_register.dart';
 
 class Eventpage extends StatelessWidget {
   const Eventpage({super.key});
@@ -18,6 +19,17 @@ class Eventpage extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EventRegisterPage()),
+          );
+        },
+        label: const Text('Add Event', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color(0xFF3F054F),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -38,5 +50,3 @@ class Eventpage extends StatelessWidget {
     );
   }
 }
-
-
