@@ -1,341 +1,470 @@
-import 'package:alp_depd/view/pages/eventpage.dart';
+import 'package:alp_depd/view/pages/registrationpage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../model/eventmodel.dart';
+import '../../viewmodel/authviewmodel.dart';
 import '../widgets/pages.dart';
+import 'package:alp_depd/view/widgets/footer_section.dart';
+
+const Color titleColor = Color(0xFF0F2A44); // navy gelap
+const Color subColor   = Color(0xFF334155); // abu kebiruan
 
 class EventDetailPage extends StatelessWidget {
-  const EventDetailPage({super.key});
+  final EventModel event;
+
+  const EventDetailPage({super.key, required this.event});
+  
+
 
   @override
   Widget build(BuildContext context) {
-    // ================= DUMMY DATA =================
-    final eventName = 'Tech Innovate Summit 2025';
-    final description =
-        'Tech Innovate Summit adalah event teknologi tahunan yang '
-        'mempertemukan developer, designer, dan tech enthusiast '
-        'untuk belajar dan berkolaborasi.';
-
-    final posterUrl =
-        'https://images.unsplash.com/photo-1521737604893-d14cc237f11d';
-
-    final organization = 'Tech Community Indonesia';
-    final openReg = DateTime(2025, 1, 1);
-    final closeReg = DateTime(2025, 2, 1);
-    final eventDate = DateTime(2025, 2, 20);
-
-    final benefits = [
-      'E-Certificate',
-      'Networking Opportunity',
-      'Knowledge Sharing',
-      'Free Merchandise',
-    ];
-
-    final divisions = [
-      'Design',
-      'Development',
-      'Marketing',
-      'Documentation',
-    ];
-
-    final diff = eventDate.difference(DateTime.now());
+    final authVM = context.watch<AuthViewModel>();
     final df = DateFormat('dd MMM yyyy');
+    final diff = event.eventDate.difference(DateTime.now());
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        child: Column(
+        child: Stack(
           children: [
-            // ================= HERO =================
-            Container(
+            // ===== BACKGROUND IMAGE (HERO + CONTENT) =====
+            SizedBox(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 100),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0F2A44), Color(0xFF4B145F)],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    eventName,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _count(diff.inDays, 'Days'),
-                      _count(diff.inHours % 24, 'Hours'),
-                      _count(diff.inMinutes % 60, 'Minutes'),
-                    ],
-                  ),
-                ],
+              height: 1600, // cukup untuk hero + content
+              child: Image.network(
+                event.posterUrl,
+                fit: BoxFit.cover,
               ),
             ),
 
-            // ================= DETAIL =================
-            Padding(
-              padding: const EdgeInsets.all(60),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      posterUrl,
-                      width: 350,
-                      height: 480,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 60),
-                  Expanded(
+            // ===== WHITE OVERLAY =====
+            Container(
+              width: double.infinity,
+              height: 1600,
+              color: Colors.white.withOpacity(0.82),
+            ),
+
+            // ===== PAGE CONTENT =====
+            Column(
+              children: [
+                // ================= NAVBAR =================
+                Navbar(
+                  isLoggedIn: authVM.isLoggedIn,
+                  activePage: "Event",
+                ),
+
+                // ================= HERO =================
+                SizedBox(
+                  height: 600,
+                  child: Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          eventName,
+                          event.name,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 56,
+                            fontWeight: FontWeight.w900,
+                            color: titleColor,
+                            letterSpacing: -0.8,
                           ),
                         ),
-                        const SizedBox(height: 15),
-                        Text(description),
-                        const SizedBox(height: 30),
-
-                        const Text(
-                          'Event Detail',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        _info('Organization', organization),
-                        _info('Open Register', df.format(openReg)),
-                        _info('Close Register', df.format(closeReg)),
-                        _info('Event Day', df.format(eventDate)),
 
                         const SizedBox(height: 30),
-                        const Text(
-                          'Event Benefit',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        ...benefits.map((b) => Text('• $b')),
 
-                        const SizedBox(height: 30),
-                        const Text(
-                          'Divisi Dibuka',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _count(diff.inDays, 'days'),
+                            const SizedBox(width: 90),
+                            _colon(),
+                            const SizedBox(width: 90),
+                            _count(diff.inHours % 24, 'hours'),
+                            const SizedBox(width: 90),
+                            _colon(),
+                            const SizedBox(width: 90),
+                            _count(diff.inMinutes % 60, 'minutes'),
+                          ],
                         ),
-                        Wrap(
-                          spacing: 10,
-                          children: divisions
-                              .map((d) => Chip(label: Text(d)))
-                              .toList(),
+
+                        const SizedBox(height: 90),
+
+                        SizedBox(
+                          width: 620,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Get Notified",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: titleColor,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        hintText: "Enter your email",
+                                        hintStyle:
+                                            const TextStyle(color: subColor),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 22, vertical: 18),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(32),
+                                          borderSide: const BorderSide(
+                                            color: titleColor,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(32),
+                                          borderSide: const BorderSide(
+                                            color: titleColor,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 18),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      padding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 38,
+                                              vertical: 20),
+                                      backgroundColor:
+                                          const Color(0xff3F054F),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(32),
+                                      ),
+                                    ),
+                                    onPressed: () {},
+                                    child: const Text(
+                                      "Notify",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            const FooterSection(),
+                // ================= CONTENT =================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 200, vertical: 150),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ========= POSTER =========
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.network(
+                          event.posterUrl,
+                          width: 380,
+                          height: 620,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 80),
+
+                      // ========= CONTENT =========
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // TITLE
+                            Text(
+                              event.name,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: titleColor,
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // DESCRIPTION
+                            Text(
+                              event.description,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: subColor,
+                                height: 1.6,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // ========= EVENT DETAIL + BENEFIT =========
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // EVENT DETAIL
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Event Detail",
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: titleColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+
+                                      _detailRow("Organization", event.organization),
+                                      _detailRow(
+                                        "Start Entry",
+                                        DateFormat('dd MMM yyyy').format(event.openRegDate),
+                                      ),
+                                      _detailRow(
+                                        "Last Entry",
+                                        DateFormat('dd MMM yyyy').format(event.closeRegDate),
+                                      ),
+                                      _detailRow(
+                                        "The Day",
+                                        DateFormat('dd MMM yyyy').format(event.eventDate),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 60),
+
+                                // BENEFIT (NUMBERED)
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "Event Benefit",
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: titleColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+
+                                      ...event.benefits.asMap().entries.map(
+                                        (entry) => Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "${entry.key + 1}.",
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: titleColor,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  entry.value,
+                                                  style: const TextStyle(
+                                                    color: subColor,
+                                                    height: 1.5,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // ========= DIVISION =========
+                            const Text(
+                              "Divisions",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: titleColor,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: event.divisions
+                                  .map((d) => Chip(label: Text(d)))
+                                  .toList(),
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // ========= CONTACT =========
+                            Row(
+                              children: [
+                                _contact(Icons.phone, event.whatsapp),
+                                const SizedBox(width: 20),
+                                _contact(Icons.message, event.lineId),
+                                const SizedBox(width: 20),
+                                _contact(Icons.camera_alt, event.instagram),
+                              ],
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // ========= APPLY BUTTON =========
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 18),
+                                  backgroundColor: const Color(0xff3F054F),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(40),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          RegistrationPage(event: event),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Apply Now !",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+
+                // ================= FOOTER =================
+                const FooterSection(),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  // ================= HELPER UI =================
-  static Widget _count(int v, String l) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        child: Column(
-          children: [
-            Text(
-              '$v',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              l,
-              style: const TextStyle(color: Colors.white70),
-            ),
-          ],
-        ),
-      );
+  // ================= HELPERS =================
+  static Widget _count(int v, String l) => Column(
+  children: [
+    Text(
+      '$v',
+      style: const TextStyle(
+        fontSize: 50,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF0F2A44),
+      ),
+    ),
+    Text(
+      l,
+      style: const TextStyle(
+        color: Color(0xFF334155),
+      ),
+    ),
+  ],
+);
 
   static Widget _info(String t, String v) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text('$t : $v'),
       );
+
+  static Widget _colon() => const Text(
+      ":",
+      style: TextStyle(
+        fontSize: 50,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF0F2A44),
+      ),
+    );
+  
+  static Widget _contact(IconData icon, String text) => Row(
+      children: [
+        Icon(icon, size: 18),
+        const SizedBox(width: 6),
+        Text(text),
+      ],
+    );
+
+  static Widget _detailRow(String label, String value) => Padding(
+  padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: subColor, // ✅ disamain
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const Text(
+          ": ",
+          style: TextStyle(
+            color: subColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: subColor, 
+              fontWeight: FontWeight.w500,// ✅ disamain
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+
+
 }
-
-
-// import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-// import 'package:provider/provider.dart';
-// import '../../viewmodel/eventDetailViewModel.dart';
-// import '../widgets/pages.dart';
-
-// class EventDetailPage extends StatelessWidget {
-//   final String eventId;
-//   const EventDetailPage({super.key, required this.eventId});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ChangeNotifierProvider(
-//       create: (_) => EventDetailViewModel()..fetchEvent(eventId),
-//       child: Consumer<EventDetailViewModel>(
-//         builder: (context, vm, _) {
-//           if (vm.isLoading || vm.event == null) {
-//             return const Scaffold(
-//               body: Center(child: CircularProgressIndicator()),
-//             );
-//           }
-
-//           final event = vm.event!;
-//           final df = DateFormat('dd MMM yyyy');
-//           final diff = vm.countdown;
-
-//           return Scaffold(
-//             body: SingleChildScrollView(
-//               child: Column(
-//                 children: [
-//                   // ================= HERO =================
-//                   Container(
-//                     width: double.infinity,
-//                     padding: const EdgeInsets.symmetric(vertical: 100),
-//                     decoration: const BoxDecoration(
-//                       gradient: LinearGradient(
-//                         colors: [Color(0xFF0F2A44), Color(0xFF4B145F)],
-//                       ),
-//                     ),
-//                     child: Column(
-//                       children: [
-//                         Text(
-//                           event.name,
-//                           style: const TextStyle(
-//                             color: Colors.white,
-//                             fontSize: 40,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         const SizedBox(height: 20),
-//                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.center,
-//                           children: [
-//                             _count(diff.inDays, 'Days'),
-//                             _count(diff.inHours % 24, 'Hours'),
-//                             _count(diff.inMinutes % 60, 'Minutes'),
-//                           ],
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-
-//                   // ================= DETAIL =================
-//                   Padding(
-//                     padding: const EdgeInsets.all(60),
-//                     child: Row(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         ClipRRect(
-//                           borderRadius: BorderRadius.circular(20),
-//                           child: Image.network(event.posterUrl, width: 350),
-//                         ),
-//                         const SizedBox(width: 60),
-//                         Expanded(
-//                           child: Column(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Text(
-//                                 event.name,
-//                                 style: const TextStyle(
-//                                   fontSize: 28,
-//                                   fontWeight: FontWeight.bold,
-//                                 ),
-//                               ),
-//                               const SizedBox(height: 15),
-//                               Text(event.description),
-//                               const SizedBox(height: 30),
-
-//                               const Text(
-//                                 'Event Detail',
-//                                 style: TextStyle(
-//                                     fontSize: 18,
-//                                     fontWeight: FontWeight.bold),
-//                               ),
-//                               _info('Organization', event.organization),
-//                               _info('Open Register', df.format(event.openRegDate)),
-//                               _info('Close Register', df.format(event.closeRegDate)),
-//                               _info('Event Day', df.format(event.eventDate)),
-
-//                               const SizedBox(height: 30),
-//                               const Text(
-//                                 'Event Benefit',
-//                                 style: TextStyle(
-//                                     fontSize: 18,
-//                                     fontWeight: FontWeight.bold),
-//                               ),
-//                               ...event.benefits
-//                                   .map((b) => Text('• $b')),
-
-//                               const SizedBox(height: 30),
-//                               const Text(
-//                                 'Divisi Dibuka',
-//                                 style: TextStyle(
-//                                     fontSize: 18,
-//                                     fontWeight: FontWeight.bold),
-//                               ),
-//                               Wrap(
-//                                 spacing: 10,
-//                                 children: event.divisions
-//                                     .map((d) => Chip(label: Text(d)))
-//                                     .toList(),
-//                               ),
-//                             ],
-//                           ),
-//                         )
-//                       ],
-//                     ),
-//                   ),
-
-//                   const FooterSection(),
-//                 ],
-//               ),
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-
-//   static Widget _count(int v, String l) =>
-//       Padding(
-//         padding: const EdgeInsets.symmetric(horizontal: 15),
-//         child: Column(
-//           children: [
-//             Text('$v',
-//                 style: const TextStyle(
-//                     color: Colors.white, fontSize: 32)),
-//             Text(l,
-//                 style: const TextStyle(color: Colors.white70)),
-//           ],
-//         ),
-//       );
-
-//   static Widget _info(String t, String v) =>
-//       Padding(
-//         padding: const EdgeInsets.symmetric(vertical: 4),
-//         child: Text('$t : $v'),
-//       );
-// }
