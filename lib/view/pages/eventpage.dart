@@ -25,7 +25,10 @@ class Eventpage extends StatelessWidget {
             EventHeader(isLoggedIn: authViewModel.isLoggedIn),
 
             // Featured Events Section
-            const FeaturedEventsSection(),
+            // const FeaturedEventsSection(),
+            const RecentEventsSection(),
+            const LastChanceEventsSection(),
+            
 
             // Footer Section
             const FooterSection(),

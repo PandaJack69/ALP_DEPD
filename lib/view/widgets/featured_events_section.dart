@@ -5,56 +5,14 @@ class FeaturedEventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ================= DUMMY EVENT =================
-    final events = [
-      EventModel(
-        id: '1',
-        name: 'Leadership 101 | Batch 1',
-        description: 'Event leadership untuk mahasiswa.',
-        posterUrl: 'https://picsum.photos/id/1/400/300',
-        organization: 'Tech Community Indonesia',
-        openRegDate: DateTime(2025, 1, 1),
-        closeRegDate: DateTime(2025, 1, 30),
-        eventDate: DateTime(2025, 2, 20),
-        benefits: ['E-Certificate', 'Networking'],
-        divisions: ['Design', 'Development'],
-      ),
-      EventModel(
-        id: '2',
-        name: 'Hackfest 2025',
-        description: 'Hackathon nasional.',
-        posterUrl: 'https://picsum.photos/id/20/400/300',
-        organization: 'Hack Community',
-        openRegDate: DateTime(2025, 2, 1),
-        closeRegDate: DateTime(2025, 2, 15),
-        eventDate: DateTime(2025, 3, 10),
-        benefits: ['Prize Pool'],
-        divisions: ['Frontend', 'Backend'],
-      ),EventModel(
-        id: '3',
-        name: 'Hackfest 2026',
-        description: 'Hackathon nasional.',
-        posterUrl: 'https://picsum.photos/id/20/400/300',
-        organization: 'Hack Community',
-        openRegDate: DateTime(2026, 2, 1),
-        closeRegDate: DateTime(2026, 2, 15),
-        eventDate: DateTime(2026, 3, 10),
-        benefits: ['Prize Pool'],
-        divisions: ['Frontend', 'Backend'],
-      ),
-      EventModel(
-        id: '4',
-        name: 'NPLC',
-        description: 'Hackathon nasional.',
-        posterUrl: 'https://picsum.photos/id/20/400/300',
-        organization: 'Hack Community',
-        openRegDate: DateTime(2025, 12, 1),
-        closeRegDate: DateTime(2026, 2, 15),
-        eventDate: DateTime(2026, 3, 10),
-        benefits: ['Prize Pool'],
-        divisions: ['Frontend', 'Backend'],
-      ),
-    ];
+    // ===== AMBIL DATA DARI pages.dart =====
+    final featuredEvents = dummyEvents
+        .where(
+          (e) =>
+              DateTime.now().isAfter(e.openRegDate) &&
+              DateTime.now().isBefore(e.closeRegDate),
+        )
+        .toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
@@ -68,22 +26,30 @@ class FeaturedEventsSection extends StatelessWidget {
               color: Color(0xFF0F172A),
             ),
           ),
+
           const SizedBox(height: 10),
+
           const Text(
-            "This isn't Just an Event, It's the Experience\nEveryone Will Talk About.",
+            "This isn't Just an Event, It's the Experience\n"
+            "Everyone Will Talk About.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, height: 1.5),
+            style: TextStyle(
+              color: Colors.grey,
+              height: 1.5,
+            ),
           ),
+
           const SizedBox(height: 50),
 
+          // ===== EVENT CARD =====
           Wrap(
             spacing: 30,
             runSpacing: 40,
             alignment: WrapAlignment.center,
-            children: events.map((event) {
+            children: featuredEvents.map((event) {
               return EventCard(
                 event: event,
-                tag: 'Closing Soon',
+                tag: "Closing Soon",
                 tagColor: Colors.pink,
               );
             }).toList(),

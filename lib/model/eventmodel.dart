@@ -12,6 +12,10 @@ class EventModel {
   final List<String> benefits;
   final List<String> divisions;
 
+  final String whatsapp;
+  final String lineId;
+  final String instagram;
+
   EventModel({
     required this.id,
     required this.name,
@@ -23,6 +27,9 @@ class EventModel {
     required this.eventDate,
     required this.benefits,
     required this.divisions,
+    required this.whatsapp,
+    required this.lineId,
+    required this.instagram,
   });
 
   factory EventModel.fromMap(String id, Map<String, dynamic> data) {
@@ -37,6 +44,9 @@ class EventModel {
       eventDate: DateTime.parse(data['eventDate']),
       benefits: List<String>.from(data['benefits']),
       divisions: List<String>.from(data['divisions']),
+      whatsapp: data['whatsapp'],
+      lineId: data['lineId'],
+      instagram: data['instagram'],
     );
   }
 }
