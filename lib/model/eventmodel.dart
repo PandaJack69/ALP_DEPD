@@ -30,6 +30,7 @@ class EventModel {
     required this.whatsapp,
     required this.lineId,
     required this.instagram,
+    // required.this.quota,
   });
 
   factory EventModel.fromMap(String id, Map<String, dynamic> data) {

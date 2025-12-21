@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../viewmodel/authviewmodel.dart';
-import '../widgets/pages.dart';
-import '../widgets/registrationformcard.dart';
-import '../../model/eventmodel.dart';
-import '../../view/widgets/footer_section.dart';
+import '../../../viewmodel/authviewmodel.dart';
+import '../../widgets/pages.dart';
+import '../../widgets/registrationformcard.dart';
+import '../../../model/eventmodel.dart';
+import '../../widgets/footer_section.dart';
 
 class RegistrationPage extends StatelessWidget {
   final EventModel event;

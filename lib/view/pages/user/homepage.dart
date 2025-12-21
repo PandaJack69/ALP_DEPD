@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import Provider
-import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
+import '../../../viewmodel/authviewmodel.dart'; // Import ViewModel
 // import 'loginpage.dart';
 // import 'profilepage.dart'; 
 import 'package:alp_depd/view/widgets/pages.dart';

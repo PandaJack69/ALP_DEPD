@@ -1,24 +1,24 @@
-import 'package:alp_depd/view/pages/eventpage.dart';
+import 'package:alp_depd/view/pages/user/eventpage.dart';
 import 'package:alp_depd/view/pages/loginpage.dart';
-import 'package:alp_depd/view/pages/profilepage.dart';
+import 'package:alp_depd/view/pages/user/profilepage.dart';
 import 'package:alp_depd/view/pages/registerpage.dart';
-import 'package:alp_depd/view/pages/registrationpage.dart';
+import 'package:alp_depd/view/pages/admin/registrationpage.dart';
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; 
-import 'firebase_options.dart'; // <--- Import Options
+// import 'firebase_options.dart'; // <--- Import Options
 import 'package:provider/provider.dart';
 import 'viewmodel/authviewmodel.dart';
-import 'view/pages/homepage.dart';
+import 'view/pages/user/homepage.dart';
 
 // Make main async
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); 
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
 
   runApp(const MyApp());
 }

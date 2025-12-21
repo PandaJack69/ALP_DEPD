@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/organizer_navbar.dart';
-import '../widgets/organizer_form.dart';
-import '../widgets/tables/event_participant_table.dart';
-import '../widgets/tables/lomba_participant_table.dart';
-import '../widgets/tables/management_table.dart';
+import '../../widgets/organizer_navbar.dart';
+import '../../widgets/organizer_form.dart';
+import '../../widgets/tables/event_participant_table.dart';
+import '../../widgets/tables/lomba_participant_table.dart';
+import '../../widgets/tables/management_table.dart';
 
 class OrganizerDashboard extends StatefulWidget {
   const OrganizerDashboard({super.key});

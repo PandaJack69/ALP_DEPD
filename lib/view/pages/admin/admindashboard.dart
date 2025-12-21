@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/organizer_form.dart';
+import '../../widgets/organizer_form.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
