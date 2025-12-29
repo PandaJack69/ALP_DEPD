@@ -97,7 +97,7 @@ class SignInForm extends StatefulWidget {
 
 class _SignInFormState extends State<SignInForm> {
   // Controllers to capture text input
-  final TextEditingController _emailController = TextEditingController(text: "Violet@gmail.com");
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   
   bool _keepLogged = false;

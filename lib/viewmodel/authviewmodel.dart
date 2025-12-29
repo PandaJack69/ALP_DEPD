@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  // Firebase Instances
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Supabase Instance
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   // State Variables
   bool _isLoading = false;
@@ -16,8 +14,9 @@ class AuthViewModel extends ChangeNotifier {
 
   // Constructor: Check if user is already logged in when app starts
   AuthViewModel() {
-    _auth.authStateChanges().listen((User? user) {
-      _currentUser = user;
+    _currentUser = _supabase.auth.currentUser;
+    _supabase.auth.onAuthStateChange.listen((data) {
+      _currentUser = data.session?.user;
       notifyListeners();
     });
   }
@@ -36,25 +35,17 @@ class AuthViewModel extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email, 
+      await _supabase.auth.signInWithPassword(
+        email: email,
         password: password
       );
       
       _setLoading(false);
       return true; // Success
 
-    } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase errors
-      if (e.code == 'user-not-found') {
-        _errorMessage = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        _errorMessage = 'Wrong password provided.';
-      } else if (e.code == 'invalid-email') {
-        _errorMessage = 'The email address is badly formatted.';
-      } else {
-        _errorMessage = e.message ?? 'An error occurred';
-      }
+    } on AuthException catch (e) {
+      // Handle specific Supabase errors
+      _errorMessage = e.message;
       
       _setLoading(false);
       return false; // Failed
@@ -71,36 +62,29 @@ class AuthViewModel extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      // 1. Create the user in Firebase Auth
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email, 
+      // 1. Create the user in Supabase Auth
+      final AuthResponse res = await _supabase.auth.signUp(
+        email: email,
         password: password
       );
 
-      // 2. Create a document in Firestore (Database) for this user
-      // We use the 'uid' as the document ID so it's easy to find later
-      if (userCredential.user != null) {
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      // 2. Create a row in the 'users' table for this user
+      if (res.user != null) {
+        await _supabase.from('users').insert({
+          'uid': res.user!.id,
           'email': email,
-          'uid': userCredential.user!.uid,
           'name': 'New User', // Placeholder name
           'university': '',
           'major': '',
-          'createdAt': FieldValue.serverTimestamp(),
+          'created_at': DateTime.now().toIso8601String(),
         });
       }
 
       _setLoading(false);
       return true; // Success
 
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        _errorMessage = 'The password provided is too weak.';
-      } else if (e.code == 'email-already-in-use') {
-        _errorMessage = 'The account already exists for that email.';
-      } else {
-        _errorMessage = e.message;
-      }
+    } on AuthException catch (e) {
+      _errorMessage = e.message;
       _setLoading(false);
       return false;
     } catch (e) {
@@ -112,7 +96,7 @@ class AuthViewModel extends ChangeNotifier {
 
   // --- Logout ---
   Future<void> logout() async {
-    await _auth.signOut();
+    await _supabase.auth.signOut();
     notifyListeners();
   }
 
