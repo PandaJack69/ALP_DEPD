@@ -1,8 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:gradient_borders/gradient_borders.dart';
+part of 'pages.dart';
 
-class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+class HomeHeader extends StatefulWidget {
+  final bool isLoggedIn;
+  const HomeHeader({super.key, required this.isLoggedIn});
+
+  @override
+  State<HomeHeader> createState() => _HomeHeaderState();
+}
+
+class _HomeHeaderState extends State<HomeHeader> {
+  // 1. Tambahkan Controller
+  final TextEditingController _searchController = TextEditingController();
+
+  // 2. Fungsi untuk memicu pencarian
+  void _onSearch() {
+    final query = _searchController.text.trim();
+    // Panggil fungsi search yang ada di DatabaseProvider
+    context.read<DatabaseProvider>().searchEvents(query);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // Jangan lupa dispose
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +40,7 @@ class HomeHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildNavbar(),
+          Navbar(isLoggedIn: widget.isLoggedIn, activePage: "Home"),
           const SizedBox(height: 60),
           const Text(
             "Find Your Next Experience",
@@ -27,7 +48,7 @@ class HomeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            "AAA Discover & Promote\nUpcoming Events",
+            "Discover & Promote\nUpcoming Events",
             style: TextStyle(
               color: Colors.white,
               fontSize: 36,
@@ -42,101 +63,51 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  // ----------------------------- NAVBAR -----------------------------
-  Widget _buildNavbar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          "The Event",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        Row(
-          children: [
-            _navItem("Home"),
-            _navItem("Event"),
-            _navItem("Competition"),
-            _navItem("PengMas"),
-          ],
-        ),
-
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white24,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text("Profile", style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    );
-  }
-
-  Widget _navItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white70, fontSize: 15),
-      ),
-    );
-  }
-
-  // --------------------------- SEARCH BAR ---------------------------
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       height: 55,
-
       decoration: BoxDecoration(
-        color: Colors.white, // ← plain white background
+        color: Colors.white,
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEC83BB).withOpacity(0.6), // soft pink glow
-            blurRadius: 25, // how soft the glow is
-            spreadRadius: 2, // how far the glow spreads
-            offset: const Offset(0, 0), // centered glow
+            color: const Color(0xFFEC83BB).withOpacity(0.6),
+            blurRadius: 25,
+            spreadRadius: 2,
+            offset: const Offset(0, 0),
           ),
         ],
         border: GradientBoxBorder(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFEC82B9), // pink
-              Color(0xFFB763DD), // purple
-            ],
+            colors: [Color(0xFFEC82B9), Color(0xFFB763DD)],
           ),
           width: 2,
         ),
       ),
-
-      // decoration: BoxDecoration(
-      //   color: Colors.white.withOpacity(0.15),
-      //   borderRadius: BorderRadius.circular(40),
-      //   border: Border.all(color: Colors.white30),
-      // ),
       child: Row(
         children: [
           const Icon(Icons.search, color: Color(0xFF263238)),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: TextField(
-              style: TextStyle(color: Color(0xFF263238)),
-              decoration: InputDecoration(
-                hintText: "Search events",
+              controller: _searchController, // Hubungkan controller
+              onSubmitted: (_) => _onSearch(), // Pencarian saat tekan 'Enter' di keyboard
+              style: const TextStyle(color: Color(0xFF263238)),
+              decoration: const InputDecoration(
+                hintText: "Search events by name or category...",
                 hintStyle: TextStyle(color: Color(0xFF263238)),
                 border: InputBorder.none,
               ),
             ),
           ),
-          Icon(Icons.send, color: Color(0xFF263238).withOpacity(0.9)),
+          // Tombol Kirim/Search
+          GestureDetector(
+            onTap: _onSearch, 
+            child: Icon(Icons.send, color: const Color(0xFF263238).withOpacity(0.9)),
+          ),
         ],
       ),
     );

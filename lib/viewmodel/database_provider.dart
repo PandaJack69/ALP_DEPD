@@ -1,0 +1,619 @@
+import 'dart:developer';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../model/custom_models.dart';
+
+class DatabaseProvider extends ChangeNotifier {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  UserProfile? _currentUser;
+
+  // List Global (Untuk User Biasa melihat semua event)
+  List<EventModel> _events = [];
+
+  // List Khusus Dashboard (Untuk Organizer melihat event buatannya sendiri)
+  List<EventModel> _myEvents = [];
+
+  List<UserProfile> _allUsers = [];
+  bool _isLoading = false;
+
+  List<EventModel> _filteredEvents = [];
+  List<EventModel> get event => _filteredEvents.isEmpty && _searchQuery.isEmpty 
+    ? _events 
+    : _filteredEvents;
+  String _searchQuery = "";
+
+  UserProfile? get currentUser => _currentUser;
+  List<EventModel> get events => _events;
+  List<EventModel> get myEvents => _myEvents; // Getter baru
+  List<UserProfile> get allUsers => _allUsers;
+  bool get isLoading => _isLoading;
+  bool get isLoggedIn => _currentUser != null;
+
+  // ================== AUTH SECTION ==================
+
+  Future<void> loadUser() async {
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      await _fetchProfile(user.id);
+    }
+  }
+  void searchEvents(String query) {
+  _searchQuery = query.toLowerCase();
+  
+  if (_searchQuery.isEmpty) {
+    _filteredEvents = [];
+  } else {
+    _filteredEvents = _events.where((event) {
+      final name = event.name.toLowerCase();
+      final category = event.category.toLowerCase();
+      return name.contains(_searchQuery) || category.contains(_searchQuery);
+    }).toList();
+  }
+  
+  notifyListeners(); // Refresh UI di semua halaman yang memantau events
+}
+
+  Future<String?> login(String email, String password) async {
+    _setLoading(true);
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      if (response.user != null) {
+        await _fetchProfile(response.user!.id);
+        _setLoading(false);
+        return null;
+      }
+      return "Login gagal";
+    } on AuthException catch (e) {
+      _setLoading(false);
+      return e.message;
+    } catch (e) {
+      _setLoading(false);
+      return e.toString();
+    }
+  }
+
+  Future<String?> register(
+    String email,
+    String password,
+    String name,
+    String role,
+    String institution,
+  ) async {
+    _setLoading(true);
+    try {
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        await _supabase.from('profiles').insert({
+          'id': response.user!.id,
+          'email': email,
+          'full_name': name,
+          'role': role.toLowerCase(),
+          'institution': institution,
+          'avatar_url': '',
+          'cv_url': '',
+          'portfolio_url': '',
+        });
+
+        await _fetchProfile(response.user!.id);
+        _setLoading(false);
+        return null;
+      }
+      return "Register gagal";
+    } catch (e) {
+      _setLoading(false);
+      return e.toString();
+    }
+  }
+
+  // lib/viewmodel/database_provider.dart
+
+  Future<void> logout() async {
+    try {
+      // 1. Keluar dari sesi di Supabase (Sisi Server)
+      await _supabase.auth.signOut();
+    } catch (e) {
+      print("Supabase signout error: $e");
+    } finally {
+      // 2. Bersihkan data lokal di memori secara INSTAN (Sisi Client)
+      // Walaupun Supabase error (misal: koneksi), user tetap harus 'logout' dari UI
+      _currentUser = null;
+      _allUsers = [];
+      _myEvents = [];
+
+      // 3. Beritahu Navbar & UI lainnya untuk langsung berubah
+      notifyListeners();
+      print("Logout lokal berhasil");
+    }
+  }
+
+  Future<void> _fetchProfile(String userId) async {
+    try {
+      final data = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
+      _currentUser = UserProfile.fromJson(data);
+      notifyListeners();
+
+      fetchAllEvents();
+      // Jika organizer, ambil event miliknya sendiri juga
+      if (_currentUser?.role == 'organizer' || _currentUser?.role == 'admin') {
+        fetchMyEvents();
+      }
+      if (_currentUser?.role == 'admin') fetchAllUsers();
+    } catch (e) {
+      print("Error fetch profile: $e");
+    }
+  }
+
+  // ================== GENERAL FILE UPLOAD ==================
+
+  Future<String?> uploadFile(Uint8List bytes, String ext, String folder) async {
+    if (_currentUser == null) return null;
+    try {
+      final fileName =
+          '${_currentUser!.id}/${folder}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+      await _supabase.storage
+          .from('documents')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      return _supabase.storage.from('documents').getPublicUrl(fileName);
+    } catch (e) {
+      print("Error upload file $folder: $e");
+      return null;
+    }
+  }
+
+  // ================== PROFILE UPDATE SECTION ==================
+
+  Future<String?> updateProfileDataComplete({
+    required String fullName,
+    required String institution,
+    required String major,
+    required String batch,
+    required String phone,
+    required String lineId,
+
+    Uint8List? cvBytes,
+    String? cvName,
+    Uint8List? portfolioBytes,
+    String? portfolioName,
+  }) async {
+    if (_currentUser == null) return "User belum login";
+
+    try {
+      _setLoading(true);
+      final userId = _currentUser!.id;
+
+      String? cvUrl;
+      String? pfUrl;
+
+      if (cvBytes != null && cvName != null) {
+        final ext = cvName.split('.').last;
+        cvUrl = await uploadFile(cvBytes, ext, 'cv');
+      }
+
+      if (portfolioBytes != null && portfolioName != null) {
+        final ext = portfolioName.split('.').last;
+        pfUrl = await uploadFile(portfolioBytes, ext, 'portfolio');
+      }
+
+      final Map<String, dynamic> updates = {
+        'full_name': fullName,
+        'institution': institution,
+        'major': major,
+        'batch_year': batch,
+        'phone_number': phone,
+        'line_id': lineId,
+      };
+
+      if (cvUrl != null) updates['cv_url'] = cvUrl;
+      if (pfUrl != null) updates['portfolio_url'] = pfUrl;
+
+      await _supabase.from('profiles').update(updates).eq('id', userId);
+
+      _currentUser = _currentUser!.copyWith(
+        fullName: fullName,
+        institution: institution,
+        major: major,
+        batch: batch,
+        phone: phone,
+        lineId: lineId,
+        cvUrl: cvUrl ?? _currentUser!.cvUrl,
+        portfolioUrl: pfUrl ?? _currentUser!.portfolioUrl,
+      );
+
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return "Gagal update: $e";
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> uploadProfilePicture(
+    Uint8List imageBytes,
+    String fileExt,
+  ) async {
+    if (_currentUser == null) return "User belum login";
+    try {
+      _setLoading(true);
+      final userId = _currentUser!.id;
+      final fileName =
+          '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+      await _supabase.storage
+          .from('avatars')
+          .uploadBinary(
+            fileName,
+            imageBytes,
+            fileOptions: const FileOptions(
+              upsert: true,
+              contentType: 'image/jpeg',
+            ),
+          );
+
+      final imageUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
+      await _supabase
+          .from('profiles')
+          .update({'avatar_url': imageUrl})
+          .eq('id', userId);
+      _currentUser = _currentUser!.copyWith(avatarUrl: imageUrl);
+
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return "Gagal upload: $e";
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ================== EVENT & ADMIN SECTIONS ==================
+
+  // 1. Fetch SEMUA Event (Untuk Halaman Utama User)
+  Future<void> fetchAllEvents() async {
+    try {
+      final response = await _supabase
+          .from('events')
+          .select('*')
+          .order('created_at', ascending: false);
+      _events = (response as List).map((e) => EventModel.fromJson(e)).toList();
+      notifyListeners();
+    } catch (e) {
+      print("Error fetching events: $e");
+    }
+  }
+
+  // 2. Fetch EVENT SAYA (Untuk Dashboard Organizer - 1 Akun 1 Dashboard)
+  Future<void> fetchMyEvents() async {
+    if (_currentUser == null) return;
+    try {
+      final response = await _supabase
+          .from('events')
+          .select('*')
+          .eq('created_by', _currentUser!.id) // Filter by User ID
+          .order('created_at', ascending: false);
+
+      _myEvents = (response as List)
+          .map((e) => EventModel.fromJson(e))
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      print("Error fetching my events: $e");
+    }
+  }
+
+  Future<String?> uploadEventPoster(
+    Uint8List imageBytes,
+    String fileExt,
+  ) async {
+    if (_currentUser == null) return null;
+    try {
+      _setLoading(true);
+      final fileName =
+          'poster_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      await _supabase.storage
+          .from('posters')
+          .uploadBinary(
+            fileName,
+            imageBytes,
+            fileOptions: const FileOptions(
+              upsert: true,
+              contentType: 'image/jpeg',
+            ),
+          );
+      final imageUrl = _supabase.storage.from('posters').getPublicUrl(fileName);
+      return imageUrl;
+    } catch (e) {
+      print("Error upload poster: $e");
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // 3. CREATE EVENT
+  Future<String?> addEvent({
+    required String title,
+    required String category,
+    required DateTime? startReg,
+    required DateTime? endReg,
+    required DateTime? eventDate,
+    required String description,
+    String? posterUrl,
+    List<String>? divisions,
+    String? whatsapp,
+    String? lineId,
+    String? location,
+    String? fee,
+    DateTime? tmDate,
+    DateTime? prelimDate,
+    String? terms,
+    String? waGroupLink,
+    String? bankAccount,
+    List<String>? subEvents,
+  }) async {
+    if (_currentUser == null) return "User belum login";
+    try {
+      _setLoading(true);
+
+      await _supabase.from('events').insert({
+        'title': title,
+        'category': category.toLowerCase(),
+        'description': description,
+        'organization_name': _currentUser!.institution ?? "Organizer",
+        'start_reg_date': startReg?.toIso8601String(),
+        'end_reg_date': endReg?.toIso8601String(),
+        'event_date': eventDate?.toIso8601String(),
+        'tm_date': tmDate?.toIso8601String(),
+        'prelim_date': prelimDate?.toIso8601String(),
+        'poster_url': posterUrl ?? 'https://via.placeholder.com/400x600',
+        'created_by': _currentUser!.id,
+        'created_at': DateTime.now().toIso8601String(),
+        'contact_whatsapp': whatsapp ?? '-',
+        'contact_line': lineId ?? '-',
+        'whatsapp_group_link': waGroupLink ?? '-',
+        'location': location ?? '-',
+        'terms_and_conditions': terms ?? '-',
+        'bank_account_info': bankAccount ?? '-',
+        'registration_fee': fee ?? '0',
+        'divisions': divisions ?? [],
+        'sub_events': subEvents ?? [],
+      });
+
+      await fetchAllEvents();
+      await fetchMyEvents(); // Refresh dashboard organizer juga
+      return null;
+    } catch (e) {
+      return "Gagal membuat event: $e";
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // 4. UPDATE EVENT (Fitur Edit)
+  Future<String?> updateEvent({
+    required String eventId,
+    required String title,
+    required String category,
+    required DateTime? startReg,
+    required DateTime? endReg,
+    required DateTime? eventDate,
+    required String description,
+    String? posterUrl,
+    List<String>? divisions,
+    List<String>? subEvents,
+    String? whatsapp,
+    String? lineId,
+    String? waGroupLink,
+    String? bankAccount,
+    String? fee,
+    String? location,
+    String? terms,
+    DateTime? tmDate,
+    DateTime? prelimDate,
+  }) async {
+    try {
+      _setLoading(true);
+
+      final Map<String, dynamic> updates = {
+        'title': title,
+        'category': category.toLowerCase(),
+        'description': description,
+        'start_reg_date': startReg?.toIso8601String(),
+        'end_reg_date': endReg?.toIso8601String(),
+        'event_date': eventDate?.toIso8601String(),
+        'tm_date': tmDate?.toIso8601String(),
+        'prelim_date': prelimDate?.toIso8601String(),
+        'contact_whatsapp': whatsapp ?? '-',
+        'contact_line': lineId ?? '-',
+        'whatsapp_group_link': waGroupLink ?? '-',
+        'location': location ?? '-',
+        'terms_and_conditions': terms ?? '-',
+        'bank_account_info': bankAccount ?? '-',
+        'registration_fee': fee ?? '0',
+        'divisions': divisions ?? [],
+        'sub_events': subEvents ?? [],
+      };
+
+      if (posterUrl != null) {
+        updates['poster_url'] = posterUrl;
+      }
+
+      await _supabase.from('events').update(updates).eq('id', eventId);
+
+      await fetchAllEvents();
+      await fetchMyEvents(); // Refresh dashboard
+      return null;
+    } catch (e) {
+      return "Gagal update: $e";
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    try {
+      await _supabase.from('events').delete().eq('id', eventId);
+
+      // Update local lists
+      _events.removeWhere((e) => e.id == eventId);
+      _myEvents.removeWhere((e) => e.id == eventId);
+
+      notifyListeners();
+    } catch (e) {
+      print("Error delete event: $e");
+    }
+  }
+
+  // lib/viewmodel/database_provider.dart
+
+  Future<List<Map<String, dynamic>>> fetchEventParticipants(
+    String eventId,
+  ) async {
+    try {
+      // Menyesuaikan dengan nama kolom asli di database Anda
+      final response = await _supabase
+          .from('registrations')
+          .select('''
+          registration_date,
+          chosen_division, 
+          status,
+          cv_link,             
+          payment_proof_url,
+          profiles (
+            email,
+            full_name,
+            institution,
+            phone_number,
+            line_id,
+            major,
+            batch_year
+          )
+        ''')
+          .eq('event_id', eventId)
+          .order('registration_date', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      log("Error fetching participants detail: $e");
+      return [];
+    }
+  }
+
+  Future<bool> registerToEvent(
+    String eventId,
+    String division,
+    String? cvLink,
+    String? proofLink,
+  ) async {
+    if (_currentUser == null) return false;
+    try {
+      await _supabase.from('registrations').insert({
+        'user_id': _currentUser!.id,
+        'event_id': eventId,
+        'status': 'pending', // Pastikan huruf kecil sesuai constraint DB
+        'registration_date': DateTime.now().toIso8601String(),
+        'chosen_division': division,
+        'payment_proof_url': proofLink,
+        'cv_link': cvLink,
+      });
+      return true;
+    } catch (e) {
+      log("Error registering detail: $e");
+      return false;
+    }
+  }
+
+  Future<void> fetchAllUsers() async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .order('created_at');
+      _allUsers = (response as List)
+          .map((e) => UserProfile.fromJson(e))
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      log("Error fetching users: $e");
+    }
+  }
+
+  // lib/viewmodel/database_provider.dart
+
+  Future<void> updateUserRole(String targetUserId, String newRole) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // 1. Update di Database Supabase
+      await _supabase
+          .from('profiles')
+          .update({'role': newRole})
+          .eq('id', targetUserId);
+
+      // 2. Update list lokal (allUsers) agar UI berubah seketika
+      int index = _allUsers.indexWhere((u) => u.id == targetUserId);
+      if (index != -1) {
+        _allUsers[index] = UserProfile(
+          id: _allUsers[index].id,
+          fullName: _allUsers[index].fullName,
+          email: _allUsers[index].email,
+          role: newRole, // Role baru
+          avatarUrl: _allUsers[index].avatarUrl,
+          institution: _allUsers[index].institution,
+          major: _allUsers[index].major,
+          batch: _allUsers[index].batch,
+          phone: _allUsers[index].phone,
+          lineId: _allUsers[index].lineId,
+        );
+      }
+
+      print("Role berhasil diubah menjadi $newRole");
+    } catch (e) {
+      print("Error updating role: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateParticipantStatus(
+    String registrationId,
+    String newStatus,
+  ) async {
+    try {
+      await _supabase
+          .from('registrations')
+          .update({'status': newStatus})
+          .eq('id', registrationId);
+      return true;
+    } catch (e) {
+      print("Error updating status: $e");
+      return false;
+    }
+  }
+
+  void _setLoading(bool val) {
+    _isLoading = val;
+    notifyListeners();
+  }
+}
