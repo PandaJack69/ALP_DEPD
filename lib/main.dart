@@ -1,26 +1,24 @@
-import 'package:alp_depd/view/pages/user/eventpage.dart';
-import 'package:alp_depd/view/pages/loginpage.dart';
-import 'package:alp_depd/view/pages/user/profilepage.dart';
-import 'package:alp_depd/view/pages/registerpage.dart';
-import 'package:alp_depd/view/pages/admin/registrationpage.dart';
-import 'package:alp_depd/view/widgets/pages.dart';
+// File: lib/main.dart
+
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; 
-// import 'firebase_options.dart'; // <--- Import Options
 import 'package:provider/provider.dart';
-import 'viewmodel/authviewmodel.dart';
-import 'view/pages/user/homepage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// Make main async
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); 
+// Import Pages & Provider
+import 'viewmodel/database_provider.dart';
+import 'view/pages/loginpage.dart';
+import 'view/pages/admin/admindashboard.dart';
+import 'view/pages/admin/organizerdashboard.dart';
+import 'view/pages/user/homepage.dart';
 
-  // Load Environment variables
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load .env
   await dotenv.load(fileName: ".env");
 
-  // Initialize Supabase
+  // Init Supabase
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_KEY']!,
@@ -36,72 +34,45 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => DatabaseProvider()..loadUser()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'The Event',
-        theme: ThemeData(
-          primarySwatch: Colors.deepPurple,
-        ),
-         initialRoute: "/home",
+        theme: ThemeData(primarySwatch: Colors.deepPurple),
+        home: const AuthCheckWrapper(), // Wrapper pintar untuk cek login
         routes: {
-          "/home": (context) => const HomePage(),
-          "/event": (context) => const Eventpage(),
-          // "/competition": (context) => const CompetitionPage(),
-          // "/pengmas": (context) => const PengMasPage(),
-          "/login": (context) => const LoginPage(),
-          "/register": (context) => const RegisterPage(),
-          "/profile": (context) => const ProfilePage(),
+          '/login': (context) => const LoginPage(),
+          '/home': (context) => const HomePage(),
+          '/admin': (context) => const AdminDashboard(),
+          '/organizer': (context) => const OrganizerDashboard(),
         },
       ),
     );
   }
 }
 
-// import 'package:alp_depd/view/pages/admindashboard.dart';
-// import 'package:alp_depd/view/pages/organizerdashboard.dart';
-// import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:provider/provider.dart';
-// import 'firebase_options.dart';
+// Widget Pintar: Cek status login & Role lalu arahkan otomatis
+class AuthCheckWrapper extends StatelessWidget {
+  const AuthCheckWrapper({super.key});
 
-// // ViewModels
-// import 'viewmodel/authviewmodel.dart';
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<DatabaseProvider>();
 
-// Pages
-// import 'view/pages/admin_dashboard.dart'; // Pastikan file ini sudah dibuat sebelumnya
+    if (provider.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
+    if (!provider.isLoggedIn) {
+      return const LoginPage();
+    }
 
-//   // Inisialisasi Firebase
-//   await Firebase.initializeApp(
-//     options: DefaultFirebaseOptions.currentPlatform,
-//   );
-
-//   runApp(const MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MultiProvider(
-//       providers: [
-//         ChangeNotifierProvider(create: (_) => AuthViewModel()),
-//       ],
-//       child: MaterialApp(
-//         debugShowCheckedModeBanner: false,
-//         title: 'The Event Admin',
-//         theme: ThemeData(
-//           primarySwatch: Colors.blue,
-//           fontFamily: 'VisueltPro', // Menggunakan font dari aset Anda
-//         ),
-//         // Langsung arahkan halaman utama ke AdminDashboard
-//         home: const OrganizerDashboard(), 
-//       ),
-//     );
-//   }
-// }
+    // Role Based Routing
+    final role = provider.currentUser?.role;
+    if (role == 'admin') return const AdminDashboard();
+    if (role == 'organizer') return const OrganizerDashboard();
+    
+    return const HomePage();
+  }
+}

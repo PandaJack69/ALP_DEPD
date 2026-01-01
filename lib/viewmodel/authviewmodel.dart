@@ -2,107 +2,89 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  // Supabase Instance
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // State Variables
-  bool _isLoading = false;
-  String? _errorMessage;
+  User? get user => _supabase.auth.currentUser;
   
-  // We check the actual Firebase user to see if they are logged in
-  User? _currentUser;
+  // Variabel untuk menyimpan role user yang sedang login
+  String? _role;
+  String? get role => _role;
 
-  // Constructor: Check if user is already logged in when app starts
-  AuthViewModel() {
-    _currentUser = _supabase.auth.currentUser;
-    _supabase.auth.onAuthStateChange.listen((data) {
-      _currentUser = data.session?.user;
-      notifyListeners();
-    });
-  }
-
-  // --- Getters ---
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  
-  // If _currentUser is not null, we are logged in
-  bool get isLoggedIn => _currentUser != null;
-  String? get userEmail => _currentUser?.email;
-
-  // --- Login Logic ---
-  Future<bool> login(String email, String password) async {
-    _setLoading(true);
-    _errorMessage = null;
-
-    try {
-      await _supabase.auth.signInWithPassword(
-        email: email,
-        password: password
-      );
-      
-      _setLoading(false);
-      return true; // Success
-
-    } on AuthException catch (e) {
-      // Handle specific Supabase errors
-      _errorMessage = e.message;
-      
-      _setLoading(false);
-      return false; // Failed
-    } catch (e) {
-      _errorMessage = 'System error: ${e.toString()}';
-      _setLoading(false);
-      return false;
+  // Cek Session saat aplikasi baru dibuka
+  Future<void> loadUserSession() async {
+    final session = _supabase.auth.currentSession;
+    if (session != null) {
+      await _fetchUserRole(session.user.id);
     }
-  }
-
-  // --- Register Logic ---
-  Future<bool> register(String email, String password) async {
-    _setLoading(true);
-    _errorMessage = null;
-
-    try {
-      // 1. Create the user in Supabase Auth
-      final AuthResponse res = await _supabase.auth.signUp(
-        email: email,
-        password: password
-      );
-
-      // 2. Create a row in the 'users' table for this user
-      if (res.user != null) {
-        await _supabase.from('users').insert({
-          'uid': res.user!.id,
-          'email': email,
-          'name': 'New User', // Placeholder name
-          'university': '',
-          'major': '',
-          'created_at': DateTime.now().toIso8601String(),
-        });
-      }
-
-      _setLoading(false);
-      return true; // Success
-
-    } on AuthException catch (e) {
-      _errorMessage = e.message;
-      _setLoading(false);
-      return false;
-    } catch (e) {
-      _errorMessage = 'System error: ${e.toString()}';
-      _setLoading(false);
-      return false;
-    }
-  }
-
-  // --- Logout ---
-  Future<void> logout() async {
-    await _supabase.auth.signOut();
     notifyListeners();
   }
 
-  // Helper to update UI
-  void _setLoading(bool value) {
-    _isLoading = value;
+  // --- FUNGSI LOGIN ---
+  Future<bool> login(String email, String password) async {
+    try {
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        // Setelah login auth berhasil, ambil data Role dari tabel 'profiles'
+        await _fetchUserRole(response.user!.id);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print("Login Error: $e");
+      return false;
+    }
+  }
+
+  // --- FUNGSI AMBIL ROLE DARI SUPABASE ---
+  Future<void> _fetchUserRole(String userId) async {
+    try {
+      final data = await _supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .single();
+      
+      _role = data['role']; // 'admin', 'organizer', atau 'mahasiswa'
+      notifyListeners();
+    } catch (e) {
+      print("Gagal ambil role: $e");
+    }
+  }
+
+  // --- FUNGSI REGISTER (Otomatis isi tabel profiles) ---
+  Future<bool> register(String email, String password, String name, String role, {String? school}) async {
+    try {
+      // 1. Buat akun di Auth Supabase
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      // 2. Masukkan data detail ke tabel 'profiles'
+      if (response.user != null) {
+        await _supabase.from('profiles').insert({
+          'id': response.user!.id, // Penting! ID harus sama
+          'email': email,
+          'full_name': name,
+          'role': role, // 'mahasiswa' atau 'siswa'
+          'institution': school ?? '-', // Asal sekolah/univ
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print("Register Error: $e");
+      return false;
+    }
+  }
+
+  Future<void> logout() async {
+    await _supabase.auth.signOut();
+    _role = null;
     notifyListeners();
   }
 }
