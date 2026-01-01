@@ -1,7 +1,8 @@
+// File: lib/view/widgets/event_card.dart
 part of 'pages.dart';
 
 class EventCard extends StatefulWidget {
-  final EventModel event;
+  final EventModel event; // Updated to use EventModel
   final String tag;
   final Color tagColor;
 
@@ -19,8 +20,11 @@ class EventCard extends StatefulWidget {
 class _EventCardState extends State<EventCard> {
   bool _isHovered = false;
 
-  bool get isComingSoon =>
-      DateTime.now().isBefore(widget.event.openRegDate);
+  // Logic Countdown & Status
+  bool get isComingSoon {
+    // Model guarantees non-null, so direct comparison is safe
+    return DateTime.now().isBefore(widget.event.openRegDate);
+  }
 
   bool get isOpen {
     final now = DateTime.now();
@@ -28,17 +32,23 @@ class _EventCardState extends State<EventCard> {
         now.isBefore(widget.event.closeRegDate);
   }
 
-  bool get isClosed =>
-      DateTime.now().isAfter(widget.event.closeRegDate);
+  bool get isClosed {
+    return DateTime.now().isAfter(widget.event.closeRegDate);
+  }
 
-  Duration get remainingTime =>
-      widget.event.closeRegDate.difference(DateTime.now());
+  Duration get remainingTime {
+    return widget.event.closeRegDate.difference(DateTime.now());
+  }
 
   String get countdownText {
     if (remainingTime.isNegative) return "Closed";
     final days = remainingTime.inDays;
     final hours = remainingTime.inHours % 24;
     return "$days days | $hours hours left";
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
   @override
@@ -68,7 +78,7 @@ class _EventCardState extends State<EventCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= IMAGE =================
+            // ================= IMAGE SECTION =================
             Stack(
               children: [
                 ClipRRect(
@@ -80,10 +90,15 @@ class _EventCardState extends State<EventCard> {
                     height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (ctx, _, __) => Container(
+                      height: 200,
+                      color: Colors.grey[300], 
+                      child: const Center(child: Icon(Icons.image_not_supported)),
+                    ),
                   ),
                 ),
 
-                // ===== APPLY NOW (TOP RIGHT) =====
+                // APPLY BUTTON (Top Right)
                 if (isOpen)
                   Positioned(
                     top: 12,
@@ -126,7 +141,7 @@ class _EventCardState extends State<EventCard> {
                     ),
                   ),
 
-                // ===== COUNTDOWN (BOTTOM LEFT) =====
+                // COUNTDOWN (Bottom Left)
                 Positioned(
                   left: 12,
                   bottom: 12,
@@ -156,13 +171,13 @@ class _EventCardState extends State<EventCard> {
               ],
             ),
 
-            // ================= CONTENT =================
+            // ================= CONTENT SECTION =================
             Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // STATUS + DATE
+                  // Status & Date
                   Row(
                     children: [
                       _statusChip(),
@@ -178,9 +193,11 @@ class _EventCardState extends State<EventCard> {
                   ),
                   const SizedBox(height: 14),
 
-                  // TITLE
+                  // Title
                   Text(
                     widget.event.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -189,10 +206,14 @@ class _EventCardState extends State<EventCard> {
                   ),
                   const SizedBox(height: 6),
 
-                  // DESCRIPTION
-                  const Text(
-                    "Turn Your Passion Into Action,\nJoin the Team Now",
-                    style: TextStyle(
+                  // Subtitle / Description Stub
+                  Text(
+                    widget.event.description.isNotEmpty 
+                        ? widget.event.description 
+                        : "No description available.",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
                     ),
@@ -213,7 +234,8 @@ class _EventCardState extends State<EventCard> {
     if (isClosed) {
       return _chip("Closed", Colors.red);
     }
-    return _chip("Closing Soon", const Color(0xffA0025B));
+    // Default state: Open / Closing Soon
+    return _chip(widget.tag, widget.tagColor);
   }
 
   Widget _chip(String text, Color color) {
@@ -233,9 +255,5 @@ class _EventCardState extends State<EventCard> {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 }

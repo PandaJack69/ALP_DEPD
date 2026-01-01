@@ -1,3 +1,4 @@
+// File: lib/view/widgets/upComingEventSection.dart
 part of 'pages.dart';
 
 class UpcomingEventsSection extends StatelessWidget {
@@ -5,10 +6,15 @@ class UpcomingEventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // HANYA EVENT YANG BELUM OPEN REGISTRATION
-    final upcomingEvents = dummyEvents
-        .where((e) => DateTime.now().isBefore(e.openRegDate))
-        .toList();
+    final dbProvider = context.watch<DatabaseProvider>();
+    final now = DateTime.now();
+    
+    // Filter: Event yang belum buka pendaftaran
+    final upcomingEvents = dbProvider.events.where((e) {
+      return now.isBefore(e.openRegDate);
+    }).toList();
+
+    if (upcomingEvents.isEmpty) return const SizedBox();
 
     return Container(
       width: double.infinity,
@@ -27,7 +33,6 @@ class UpcomingEventsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ===== TITLE =====
           const Text(
             "Upcoming\nEvents",
             style: TextStyle(
@@ -37,10 +42,7 @@ class UpcomingEventsSection extends StatelessWidget {
               height: 1.2,
             ),
           ),
-
           const SizedBox(height: 12),
-
-          // ===== UNDERLINE =====
           Container(
             width: 90,
             height: 4,
@@ -49,10 +51,7 @@ class UpcomingEventsSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-
           const SizedBox(height: 20),
-
-          // ===== SUBTITLE =====
           const Text(
             "This Isn’t Just an Event. It’s\n"
             "the Experience Everyone\n"
@@ -63,10 +62,8 @@ class UpcomingEventsSection extends StatelessWidget {
               height: 1.6,
             ),
           ),
-
           const SizedBox(height: 50),
 
-          // ===== HORIZONTAL CARD =====
           SizedBox(
             height: 420,
             child: ListView.separated(

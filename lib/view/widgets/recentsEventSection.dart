@@ -1,20 +1,21 @@
+// File: lib/view/widgets/recentsEventSection.dart
 part of 'pages.dart';
 
 class RecentEventsSection extends StatelessWidget {
   const RecentEventsSection({super.key});
 
   bool _isRecent(EventModel event) {
+    // Logic: Event opened registration within the last 7 days
     final now = DateTime.now();
     final diffDays = now.difference(event.openRegDate).inDays;
-
-    return now.isAfter(event.openRegDate) &&
-        now.isBefore(event.closeRegDate) &&
-        diffDays <= 7;
+    return diffDays >= 0 && diffDays <= 7;
   }
 
   @override
   Widget build(BuildContext context) {
-    final recentEvents = dummyEvents.where(_isRecent).toList();
+    // Ambil data dari Provider
+    final dbProvider = context.watch<DatabaseProvider>();
+    final recentEvents = dbProvider.events.where(_isRecent).toList();
 
     if (recentEvents.isEmpty) return const SizedBox();
 
@@ -23,7 +24,6 @@ class RecentEventsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ===== TITLE =====
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
@@ -52,7 +52,6 @@ class RecentEventsSection extends StatelessWidget {
 
           const SizedBox(height: 50),
 
-          // ===== HORIZONTAL LIST =====
           SizedBox(
             height: 430,
             child: ListView.separated(
@@ -61,11 +60,10 @@ class RecentEventsSection extends StatelessWidget {
               itemCount: recentEvents.length,
               separatorBuilder: (_, __) => const SizedBox(width: 30),
               itemBuilder: (context, index) {
-                final event = recentEvents[index];
                 return EventCard(
-                  event: event,
+                  event: recentEvents[index],
                   tag: "Just Now",
-                  tagColor: Colors.blue, // default sementara
+                  tagColor: Colors.blue, 
                 );
               },
             ),

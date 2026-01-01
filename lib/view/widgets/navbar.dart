@@ -4,11 +4,7 @@ class Navbar extends StatelessWidget {
   final bool isLoggedIn;
   final String activePage;
 
-  const Navbar({
-    super.key,
-    required this.isLoggedIn,
-    this.activePage = "Home",
-  });
+  const Navbar({super.key, required this.isLoggedIn, this.activePage = "Home"});
 
   Widget _navLink(
     BuildContext context,
@@ -36,7 +32,7 @@ class Navbar extends StatelessWidget {
                 height: 2,
                 width: 20,
                 color: Colors.white,
-              )
+              ),
           ],
         ),
       ),
@@ -46,20 +42,17 @@ class Navbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final authViewModel = context.watch<AuthViewModel>();
+    final dbProvider = context.watch<DatabaseProvider>();
+    final user = dbProvider.currentUser; // Ambil data user
     final bool isDesktop = width > 800;
 
     return Container(
-      // --- PENERAPAN GRADASI ---
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xff123C52),
-            Color(0xff3F054F),
-          ],
+          colors: [Color(0xff123C52), Color(0xff3F054F)],
         ),
       ),
       child: Row(
@@ -67,18 +60,25 @@ class Navbar extends StatelessWidget {
           const Text(
             "The Event",
             style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
           const Spacer(),
 
           if (isDesktop) ...[
             _navLink(context, "Home", activePage == "Home", () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const HomePage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HomePage()),
+              );
             }),
             _navLink(context, "Event", activePage == "Event", () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const Eventpage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const Eventpage()),
+              );
             }),
           ],
 
@@ -89,17 +89,27 @@ class Navbar extends StatelessWidget {
               onSelected: (value) {
                 if (value == 'organize') {
                   Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const AdminDashboard()));
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OrganizerDashboard(),
+                    ),
+                  ); // Atau OrganizerDashboard
+                } else if (value == 'admin') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminDashboard(),
+                    ),
+                  );
                 } else if (value == 'profile') {
                   Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const ProfilePage()));
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfilePage(),
+                    ),
+                  );
                 } else if (value == 'logout') {
-                  authViewModel.logout();
-                  // Optionally, navigate to home page after logout
+                  dbProvider.logout();
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const HomePage()),
@@ -108,10 +118,19 @@ class Navbar extends StatelessWidget {
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'organize',
-                  child: Text('Organize Events'),
-                ),
+                // --- LOGIKA PENGECEKAN ROLE ---
+               
+                if (user?.role == 'organizer')
+                  const PopupMenuItem<String>(
+                    value: 'organize',
+                    child: Text('Organize Events'),
+                  ),
+                if (user?.role == 'admin')
+                  const PopupMenuItem<String>(
+                    value: 'admin',
+                    child: Text('Manage Admin'),
+                  ),
+                // ------------------------------
                 const PopupMenuItem<String>(
                   value: 'profile',
                   child: Text('Manage Profile'),
@@ -124,15 +143,20 @@ class Navbar extends StatelessWidget {
               ],
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 18,
-                    backgroundImage: NetworkImage(
-                        "https://picsum.photos/id/64/200/200"), // Placeholder
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage:
+                        (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                        ? NetworkImage(user.avatarUrl!)
+                        : const NetworkImage(
+                            "https://cdn-icons-png.freepik.com/512/6522/6522516.png",
+                          ),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
-                    "Violet@gmail.com", // Placeholder
-                    style: TextStyle(color: Colors.white),
+                  Text(
+                    user?.email ?? "User",
+                    style: const TextStyle(color: Colors.white),
                   ),
                   const Icon(Icons.arrow_drop_down, color: Colors.white),
                 ],

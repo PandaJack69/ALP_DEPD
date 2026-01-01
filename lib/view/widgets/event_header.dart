@@ -1,3 +1,4 @@
+// File: lib/view/widgets/event_header.dart
 part of 'pages.dart';
 
 class EventHeader extends StatelessWidget {
@@ -10,9 +11,16 @@ class EventHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final upcomingEvents = dummyEvents
-        .where((e) => DateTime.now().isBefore(e.openRegDate))
-        .toList();
+    // 1. AMBIL DATA DARI DATABASE
+    final dbProvider = context.watch<DatabaseProvider>();
+    final now = DateTime.now();
+
+    // 2. FILTER: Event yang belum dibuka pendaftarannya (Upcoming)
+    // Logic: Sekarang harus SEBELUM tanggal buka pendaftaran
+    final upcomingEvents = dbProvider.events.where((e) {
+      // Pastikan openRegDate valid (tidak null dan belum lewat)
+      return now.isBefore(e.openRegDate);
+    }).toList();
 
     return Container(
       width: double.infinity,
@@ -41,10 +49,10 @@ class EventHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ===== LEFT TEXT =====
-             SizedBox(
+              SizedBox(
                 width: 420,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center, // ← INI KUNCINYA
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
@@ -83,24 +91,29 @@ class EventHeader extends StatelessWidget {
                 ),
               ),
 
-
               const SizedBox(width: 40),
 
-              // ===== RIGHT CARD =====
+              // ===== RIGHT CARD (DATA ASLI) =====
               Expanded(
                 child: SizedBox(
                   height: 420,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: upcomingEvents.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(width: 24),
-                    itemBuilder: (context, index) {
-                      return UpcomingEventCard(
-                        event: upcomingEvents[index],
-                      );
-                    },
-                  ),
+                  child: upcomingEvents.isEmpty 
+                    ? const Center(
+                        child: Text(
+                          "No upcoming events", 
+                          style: TextStyle(color: Colors.white54, fontSize: 16)
+                        ),
+                      )
+                    : ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: upcomingEvents.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 24),
+                        itemBuilder: (context, index) {
+                          return UpcomingEventCard(
+                            event: upcomingEvents[index],
+                          );
+                        },
+                      ),
                 ),
               ),
             ],
@@ -123,18 +136,10 @@ class EventHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(40),
-        border: const GradientBoxBorder(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFEC82B9),
-              Color(0xFFB763DD),
-            ],
-          ),
-          width: 2,
-        ),
+        border: Border.all(color: const Color(0xFFB763DD), width: 2), 
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFEC83BB).withOpacity(0.5),
+            color: const Color(0xFFEC83BB).withOpacity(0.5),
             blurRadius: 25,
             spreadRadius: 2,
           ),

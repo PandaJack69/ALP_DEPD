@@ -1,3 +1,4 @@
+// File: lib/view/widgets/lastChanceEventSection.dart
 part of 'pages.dart';
 
 class LastChanceEventsSection extends StatelessWidget {
@@ -5,35 +6,36 @@ class LastChanceEventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dbProvider = context.watch<DatabaseProvider>();
     final now = DateTime.now();
 
-    final lastChanceEvents = dummyEvents
+    final lastChanceEvents = dbProvider.events
         .where((event) {
-          final daysLeft =
-              event.closeRegDate.difference(now).inDays;
-
+          // Logic: 
+          // 1. Event has started (now is after openReg)
+          // 2. Event has NOT ended (now is before closeReg)
+          // 3. Closing within 7 days
+          
+          final difference = event.closeRegDate.difference(now);
+          
+          // No need for '!' or '!= null' checks because fields are non-nullable
           return now.isAfter(event.openRegDate) &&
-              now.isBefore(event.closeRegDate) &&
-              daysLeft >= 0 &&
-              daysLeft <= 7;
+                 now.isBefore(event.closeRegDate) &&
+                 difference.inDays >= 0 &&
+                 difference.inDays <= 7;
         })
         .toList()
-      // 🔥 paling mepet tampil dulu
-      ..sort(
-        (a, b) => a.closeRegDate.compareTo(b.closeRegDate),
-      );
+        // Sort by which one closes soonest
+        ..sort((a, b) => a.closeRegDate.compareTo(b.closeRegDate));
 
-    // kalau ga ada, section ga muncul
-    if (lastChanceEvents.isEmpty) {
-      return const SizedBox();
-    }
+    // Hide section if empty
+    if (lastChanceEvents.isEmpty) return const SizedBox();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 70),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ================= TITLE =================
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
@@ -45,9 +47,7 @@ class LastChanceEventsSection extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 10),
-
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
             child: Text(
@@ -59,23 +59,18 @@ class LastChanceEventsSection extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 45),
 
-          // ================= EVENT LIST =================
           SizedBox(
             height: 420,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
               itemCount: lastChanceEvents.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(width: 30),
+              separatorBuilder: (_, __) => const SizedBox(width: 30),
               itemBuilder: (context, index) {
-                final event = lastChanceEvents[index];
-
                 return EventCard(
-                  event: event,
+                  event: lastChanceEvents[index],
                   tag: "Closing Soon",
                   tagColor: const Color(0xffA0025B),
                 );

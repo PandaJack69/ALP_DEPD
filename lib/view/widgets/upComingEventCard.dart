@@ -1,7 +1,8 @@
+// File: lib/view/widgets/upComingEventCard.dart
 part of 'pages.dart';
 
 class UpcomingEventCard extends StatelessWidget {
-  final EventModel event;
+  final EventModel event; // Updated to use EventModel
 
   const UpcomingEventCard({
     super.key,
@@ -36,15 +37,16 @@ class UpcomingEventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           child: Stack(
             children: [
-              // ===== IMAGE =====
+              // IMAGE
               Image.network(
                 event.posterUrl,
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (ctx, _, __) => Container(color: Colors.grey[800]),
               ),
 
-              // ===== OVERLAY =====
+              // OVERLAY
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -58,7 +60,7 @@ class UpcomingEventCard extends StatelessWidget {
                 ),
               ),
 
-              // ===== CONTENT =====
+              // CONTENT
               Positioned(
                 left: 20,
                 right: 20,
@@ -66,7 +68,6 @@ class UpcomingEventCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // EVENT DATE
                     Text(
                       _formatDate(event.eventDate),
                       style: const TextStyle(
@@ -77,7 +78,6 @@ class UpcomingEventCard extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    // TITLE
                     Text(
                       event.name,
                       maxLines: 2,
@@ -91,9 +91,10 @@ class UpcomingEventCard extends StatelessWidget {
 
                     const SizedBox(height: 6),
 
-                    // DESCRIPTION
                     Text(
-                      event.description,
+                      event.description.isNotEmpty 
+                          ? event.description 
+                          : "No description available",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -106,7 +107,7 @@ class UpcomingEventCard extends StatelessWidget {
                 ),
               ),
 
-              // ===== COMING SOON TAG =====
+              // COMING SOON TAG
               Positioned(
                 top: 16,
                 left: 16,

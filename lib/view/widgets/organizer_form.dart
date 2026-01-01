@@ -1,8 +1,14 @@
+import 'dart:typed_data'; 
+import 'package:alp_depd/model/custom_models.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; 
+import 'package:image_picker/image_picker.dart'; 
+import '../../viewmodel/database_provider.dart';
 
 class OrganizerForm extends StatefulWidget {
-  final String category;
-  final Map<String, dynamic>? initialData;
+  final String category; 
+  final EventModel? initialData; 
 
   const OrganizerForm({super.key, required this.category, this.initialData});
 
@@ -11,66 +17,418 @@ class OrganizerForm extends StatefulWidget {
 }
 
 class _OrganizerFormState extends State<OrganizerForm> {
-  final List<TextEditingController> _subEventControllers = [];
-  final List<String> _divisions = ["Acara", "Inventory", "Security", "PR", "PDD"];
-  final List<String> _selectedDivisions = [];
-  final TextEditingController _customDivController = TextEditingController();
+  late String _selectedCategory; 
+
+  // Controllers
+  final _titleController = TextEditingController();
+  final _descController = TextEditingController();
+  final _startRegController = TextEditingController();
+  final _endRegController = TextEditingController();
+  final _eventDateController = TextEditingController();
+  final _locationController = TextEditingController();
+  
+  // Kontak
+  final _waController = TextEditingController();
+  final _lineController = TextEditingController();
+  
+  // Khusus Lomba
+  final _feeController = TextEditingController(); 
+  final _subEventsController = TextEditingController(); // Untuk "Cabang Lomba"
+  
+  // Khusus Event & Pengmas (BARU DITAMBAHKAN)
+  final _divisionsController = TextEditingController(); // Untuk "Divisi Kepanitiaan"
+
+  DateTime? _startRegDate;
+  DateTime? _endRegDate;
+  DateTime? _eventDateObj;
+
+  Uint8List? _selectedImageBytes; 
+  String? _selectedFileExt;       
+  String? _uploadedPosterUrl;     
+
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.category == "Lomba") _subEventControllers.add(TextEditingController());
-    // Logika Update: Isi data jika initialData ada
+    // Default Category
+    _selectedCategory = widget.category;
+    if (!['Event', 'Lomba', 'Pengmas'].contains(_selectedCategory)) {
+      _selectedCategory = 'Event';
+    }
+
+    // Load Data jika Edit Mode
+    if (widget.initialData != null) {
+      final data = widget.initialData!;
+      if (data.category.isNotEmpty) _selectedCategory = data.category; 
+
+      _titleController.text = data.name;
+      _descController.text = data.description;
+      _uploadedPosterUrl = data.posterUrl; 
+      _locationController.text = data.location;
+      _feeController.text = data.fee;
+      _waController.text = data.whatsapp;
+      _lineController.text = data.lineId;
+      
+      // Load Array ke String (Join dengan koma)
+      _subEventsController.text = data.subEvents.join(', ');
+      _divisionsController.text = data.divisions.join(', '); // Load Divisi
+
+      if (data.openRegDate != DateTime(0)) { 
+        _startRegDate = data.openRegDate;
+        _startRegController.text = DateFormat('yyyy-MM-dd').format(data.openRegDate);
+      }
+      if (data.closeRegDate != DateTime(0)) {
+        _endRegDate = data.closeRegDate;
+        _endRegController.text = DateFormat('yyyy-MM-dd').format(data.closeRegDate);
+      }
+      if (data.eventDate != DateTime(0)) {
+        _eventDateObj = data.eventDate;
+        _eventDateController.text = DateFormat('yyyy-MM-dd').format(data.eventDate);
+      }
+    }
+  }
+
+  Future<void> _pickPoster() async {
+    final picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      final ext = pickedFile.name.split('.').last;
+      setState(() {
+        _selectedImageBytes = bytes;
+        _selectedFileExt = ext;
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context, TextEditingController controller, Function(DateTime) onPicked) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null) {
+      setState(() {
+        onPicked(picked);
+        controller.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  // === LOGIC SIMPAN DATA ===
+  Future<void> _saveData() async {
+    // 1. Validasi Umum
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nama kegiatan harus diisi")));
+      return;
+    }
+
+    // 2. Validasi Khusus Lomba
+    if (_selectedCategory == 'Lomba') {
+       if (_feeController.text.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Biaya pendaftaran lomba harus diisi (isi 0 jika gratis)")));
+         return;
+       }
+       if (_subEventsController.text.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cabang lomba (Sub Event) harus diisi")));
+         return;
+       }
+    } 
+    // 3. Validasi Khusus Event/Pengmas
+    else {
+      if (_divisionsController.text.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Divisi kepanitiaan harus diisi")));
+         return;
+      }
+    }
+
+    setState(() => _isLoading = true);
+    final provider = context.read<DatabaseProvider>();
+    String? finalPosterUrl = _uploadedPosterUrl; 
+
+    // Upload Poster Baru (Jika ada)
+    if (_selectedImageBytes != null && _selectedFileExt != null) {
+      final newUrl = await provider.uploadEventPoster(_selectedImageBytes!, _selectedFileExt!);
+      if (newUrl != null) {
+        finalPosterUrl = newUrl;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal upload poster")));
+        setState(() => _isLoading = false);
+        return;
+      }
+    }
+
+    // Persiapan Data
+    String finalFee = "0"; 
+    List<String> subEventsList = [];
+    List<String> divisionsList = [];
+
+    if (_selectedCategory == 'Lomba') {
+      finalFee = _feeController.text.isEmpty ? "0" : _feeController.text;
+      subEventsList = _subEventsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    } else {
+      // Event & Pengmas
+      divisionsList = _divisionsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+
+    String? error;
+    
+    // Panggil Provider (Add atau Update)
+    if (widget.initialData == null) {
+      // MODE CREATE
+      error = await provider.addEvent(
+        title: _titleController.text,
+        category: _selectedCategory.toLowerCase(), // Penting: lowercase
+        description: _descController.text,
+        startReg: _startRegDate,
+        endReg: _endRegDate,
+        eventDate: _eventDateObj,
+        posterUrl: finalPosterUrl,
+        
+        location: _locationController.text,
+        fee: finalFee, 
+        
+        whatsapp: _waController.text,
+        lineId: _lineController.text,
+        
+        divisions: divisionsList, // Masuk ke kolom 'divisions'
+        subEvents: subEventsList, // Masuk ke kolom 'sub_events'
+      );
+    } else {
+      // MODE UPDATE (Jika sudah ada fitur updateEvent di provider)
+      error = await provider.updateEvent(
+        eventId: widget.initialData!.id, // ID event yang diedit
+        title: _titleController.text,
+        category: _selectedCategory.toLowerCase(),
+        description: _descController.text,
+        startReg: _startRegDate,
+        endReg: _endRegDate,
+        eventDate: _eventDateObj,
+        posterUrl: finalPosterUrl, // URL baru atau lama
+        
+        location: _locationController.text,
+        fee: finalFee,
+        
+        whatsapp: _waController.text,
+        lineId: _lineController.text,
+        
+        divisions: divisionsList,
+        subEvents: subEventsList,
+      );
+    }
+
+    setState(() => _isLoading = false);
+
+    if (error == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil disimpan!"), backgroundColor: Colors.green));
+      Navigator.pop(context); 
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error ?? "Gagal"), backgroundColor: Colors.red));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("${widget.initialData == null ? 'Buat' : 'Update'} ${widget.category}")),
+      appBar: AppBar(
+        title: Text("${widget.initialData == null ? 'Buat' : 'Update'} Kegiatan"),
+        backgroundColor: const Color(0xff123C52),
+        foregroundColor: Colors.white,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildField("Nama ${widget.category}"),
-            Row(children: [
-              Expanded(child: _buildField("Start Daftar")),
-              const SizedBox(width: 15),
-              Expanded(child: _buildField("End Daftar")),
-            ]),
-            _buildField("Hari H Acara / Pengmas"),
-            
-            if (widget.category != "Lomba") ...[
-              const SizedBox(height: 15),
-              const Text("Divisi yang Dicari:", style: TextStyle(fontWeight: FontWeight.bold)),
-              Wrap(spacing: 8, children: _divisions.map((d) => FilterChip(label: Text(d), selected: _selectedDivisions.contains(d), onSelected: (s) => setState(() => s ? _selectedDivisions.add(d) : _selectedDivisions.remove(d)))).toList()),
-              TextField(controller: _customDivController, decoration: InputDecoration(labelText: "Tambah Divisi Custom", suffixIcon: IconButton(icon: const Icon(Icons.add), onPressed: () { if(_customDivController.text.isNotEmpty){ setState(() => _divisions.add(_customDivController.text)); _customDivController.clear(); } }))),
-              _buildField("Link WA Group"),
-            ],
-
-            if (widget.category == "Lomba") ...[
-              _buildField("TM (Technical Meeting)"),
-              _buildField("Prelim"),
-              const Text("Sub-Event:", style: TextStyle(fontWeight: FontWeight.bold)),
-              ..._subEventControllers.map((c) => Padding(padding: const EdgeInsets.only(top: 8), child: TextField(controller: c, decoration: const InputDecoration(border: OutlineInputBorder())))),
-              TextButton.icon(onPressed: () => setState(() => _subEventControllers.add(TextEditingController())), icon: const Icon(Icons.add), label: const Text("Tambah Jenis Lomba")),
-              _buildField("Biaya Pendaftaran"),
-              _buildField("No Rekening"),
-            ],
-
-            _buildField("CP WhatsApp"),
-            _buildField("CP Line"),
-            _buildField("Link S&K (PDF)"),
+            const Text("Jenis Kegiatan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff123C52))),
+            const Divider(),
+            Column(
+              children: [
+                RadioListTile<String>(
+                  title: const Text('Event'),
+                  value: 'Event',
+                  groupValue: _selectedCategory,
+                  activeColor: const Color(0xff3F054F),
+                  onChanged: (val) => setState(() => _selectedCategory = val!),
+                ),
+                RadioListTile<String>(
+                  title: const Text('Lomba (Competition)'),
+                  value: 'Lomba',
+                  groupValue: _selectedCategory,
+                  activeColor: const Color(0xff3F054F),
+                  onChanged: (val) => setState(() => _selectedCategory = val!),
+                ),
+                RadioListTile<String>(
+                  title: const Text('Pengmas (Community Service)'),
+                  value: 'Pengmas',
+                  groupValue: _selectedCategory,
+                  activeColor: const Color(0xff3F054F),
+                  onChanged: (val) => setState(() => _selectedCategory = val!),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
-            const Text("Upload Poster:"),
-            Container(height: 150, width: double.infinity, decoration: BoxDecoration(border: Border.all(color: Colors.grey)), child: const Icon(Icons.add_a_photo)),
-            const SizedBox(height: 30),
-            SizedBox(width: double.infinity, height: 50, child: ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("SIMPAN"))),
+
+            const Text("Informasi Utama", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff123C52))),
+            const Divider(),
+            _buildField("Nama Kegiatan", controller: _titleController),
+            _buildField("Deskripsi Lengkap", controller: _descController, maxLines: 4),
+            
+            const SizedBox(height: 20),
+            
+            const Text("Waktu Pelaksanaan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff123C52))),
+            const Divider(),
+            Row(children: [
+              Expanded(child: _buildDateField("Mulai Pendaftaran", _startRegController, (d) => _startRegDate = d)),
+              const SizedBox(width: 15),
+              Expanded(child: _buildDateField("Tutup Pendaftaran", _endRegController, (d) => _endRegDate = d)),
+            ]),
+            _buildDateField("Hari H Kegiatan", _eventDateController, (d) => _eventDateObj = d),
+
+            const SizedBox(height: 20),
+
+            const Text("Detail Tambahan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff123C52))),
+            const Divider(),
+            _buildField("Lokasi (Ex: Universitas Ciputra)", controller: _locationController),
+            
+            // --- LOGIKA TAMPILAN DINAMIS ---
+            
+            // 1. JIKA LOMBA: Tampilkan Biaya & Sub Event
+            if (_selectedCategory == 'Lomba') ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Khusus Lomba:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                    _buildField("Biaya Pendaftaran (Angka Saja)", controller: _feeController, hint: "Ex: 50000", inputType: TextInputType.number),
+                    _buildField("Cabang Lomba / Sub Event (Pisahkan koma)", controller: _subEventsController, hint: "Ex: Basket, Futsal, Mobile Legends"),
+                  ],
+                ),
+              ),
+            ] 
+            // 2. JIKA EVENT / PENGMAS: Tampilkan Divisi
+            else ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Kebutuhan Panitia:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                    _buildField("Divisi yang Dicari (Pisahkan koma)", controller: _divisionsController, hint: "Ex: Acara, PDD, Humas, Konsumsi"),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
+
+            const Text("Kontak Person", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff123C52))),
+            const Divider(),
+            _buildField("No. Whatsapp (Ex: 08123456789)", controller: _waController, inputType: TextInputType.phone),
+            _buildField("ID Line", controller: _lineController),
+
+            const SizedBox(height: 20),
+
+            const Text("Poster Kegiatan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff123C52))),
+            const Divider(),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: _pickPoster, 
+              child: Container(
+                height: 300, 
+                width: double.infinity, 
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: _buildPosterPreview(),
+              ),
+            ),
+            const SizedBox(height: 5),
+            const Center(child: Text("Klik kotak di atas untuk upload gambar", style: TextStyle(fontSize: 12, color: Colors.grey))),
+            
+            const SizedBox(height: 40),
+            
+            SizedBox(
+              width: double.infinity, 
+              height: 55, 
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveData, 
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff3F054F), 
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white) 
+                    : const Text("PUBLISH KEGIATAN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              )
+            ),
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildField(String label) => Padding(padding: const EdgeInsets.only(top: 15), child: TextFormField(decoration: InputDecoration(labelText: label, border: const OutlineInputBorder())));
+  Widget _buildPosterPreview() {
+    if (_selectedImageBytes != null) {
+      return ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.memory(_selectedImageBytes!, fit: BoxFit.contain));
+    } 
+    else if (_uploadedPosterUrl != null && _uploadedPosterUrl!.isNotEmpty) {
+      return ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(_uploadedPosterUrl!, fit: BoxFit.contain));
+    }
+    else {
+      return const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.cloud_upload_outlined, size: 50, color: Colors.grey),
+          SizedBox(height: 10),
+          Text("Upload Poster (JPG/PNG)", style: TextStyle(color: Colors.grey)),
+        ],
+      );
+    }
+  }
+
+  Widget _buildField(String label, {TextEditingController? controller, int maxLines = 1, String? hint, TextInputType? inputType}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 15),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        keyboardType: inputType,
+        decoration: InputDecoration(
+          labelText: label, 
+          hintText: hint,
+          alignLabelWithHint: true,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateField(String label, TextEditingController controller, Function(DateTime) onPicked) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 15),
+      child: TextFormField(
+        controller: controller,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: label, 
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          suffixIcon: const Icon(Icons.calendar_month, color: Color(0xff3F054F)),
+        ),
+        onTap: () => _selectDate(context, controller, onPicked),
+      ),
+    );
+  }
 }
