@@ -1,10 +1,10 @@
-import 'package:alp_depd/view/pages/registrationpage.dart';
+import 'package:alp_depd/view/pages/admin/registrationpage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../model/eventmodel.dart';
-import '../../viewmodel/authviewmodel.dart';
-import '../widgets/pages.dart';
+import '../../../model/eventmodel.dart';
+import '../../../viewmodel/authviewmodel.dart';
+import '../../widgets/pages.dart';
 import 'package:alp_depd/view/widgets/footer_section.dart';
 
 const Color titleColor = Color(0xFF0F2A44); // navy gelap

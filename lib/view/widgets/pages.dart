@@ -1,10 +1,15 @@
-import 'package:alp_depd/view/pages/eventpage.dart';
-import 'package:alp_depd/view/pages/homepage.dart';
-import 'package:alp_depd/view/pages/registrationpage.dart';
+import 'package:alp_depd/view/pages/user/eventpage.dart';
+import 'package:alp_depd/view/pages/user/homepage.dart';
+import 'package:alp_depd/view/pages/admin/registrationpage.dart';
 import 'package:flutter/material.dart';
 import 'package:gradient_borders/gradient_borders.dart';
 import 'package:alp_depd/model/eventmodel.dart';
-import 'package:alp_depd/view/pages/eventDetailPage.dart';
+import 'package:alp_depd/view/pages/admin/admindashboard.dart';
+import 'package:alp_depd/view/pages/user/profilepage.dart';
+import 'package:alp_depd/viewmodel/authviewmodel.dart';
+import 'package:provider/provider.dart';
+import 'package:alp_depd/view/pages/user/eventDetailPage.dart';
+import 'package:alp_depd/view/pages/loginpage.dart';
 
 
 part 'home_header.dart';

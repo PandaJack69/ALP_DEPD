@@ -43,6 +43,8 @@ dependencies:
   firebase_auth: ^5.7.0  # Versi terbaru saat ini 
   cloud_firestore: ^5.6.1
   url_launcher: ^6.3.1
+  supabase_flutter: ^2.0.0
+  flutter_dotenv: ^5.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -68,6 +70,7 @@ flutter:
   assets:
     - assets/fonts/
     - assets/Image/testing.png
+    - .env
 
   fonts:
     - family: VisueltPro

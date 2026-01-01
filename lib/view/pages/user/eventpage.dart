@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import Provider
-import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
+import '../../../viewmodel/authviewmodel.dart'; // Import ViewModel
 // import 'loginpage.dart';
 // import 'profilepage.dart'; 
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:alp_depd/view/widgets/footer_section.dart';
+import '../admin/event_register.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class Eventpage extends StatelessWidget {
+  const Eventpage({super.key});
 
 
   @override
@@ -18,14 +19,28 @@ class HomePage extends StatelessWidget {
     
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EventRegisterPage()),
+          );
+        },
+        label: const Text('Add Event', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color(0xFF3F054F),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // 2. Pass the isLoggedIn state to the Header Section
-            HomeHeader(isLoggedIn: authViewModel.isLoggedIn),
+            EventHeader(isLoggedIn: authViewModel.isLoggedIn),
 
             // Featured Events Section
-            const FeaturedEventsSection(),
+            // const FeaturedEventsSection(),
+            const RecentEventsSection(),
+            const LastChanceEventsSection(),
+            
 
             // Footer Section
             const FooterSection(),
@@ -35,5 +50,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
-

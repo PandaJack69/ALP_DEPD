@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import Provider
-import '../../viewmodel/authviewmodel.dart'; // Import ViewModel
+import '../../../viewmodel/authviewmodel.dart'; // Import ViewModel
 // import 'loginpage.dart';
 // import 'profilepage.dart'; 
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:alp_depd/view/widgets/footer_section.dart';
 
-class Eventpage extends StatelessWidget {
-  const Eventpage({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
 
   @override
@@ -22,13 +22,10 @@ class Eventpage extends StatelessWidget {
         child: Column(
           children: [
             // 2. Pass the isLoggedIn state to the Header Section
-            EventHeader(isLoggedIn: authViewModel.isLoggedIn),
+            HomeHeader(isLoggedIn: authViewModel.isLoggedIn),
 
             // Featured Events Section
-            // const FeaturedEventsSection(),
-            const RecentEventsSection(),
-            const LastChanceEventsSection(),
-            
+            const FeaturedEventsSection(),
 
             // Footer Section
             const FooterSection(),

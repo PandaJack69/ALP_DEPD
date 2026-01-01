@@ -46,6 +46,7 @@ class Navbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final authViewModel = context.watch<AuthViewModel>();
     final bool isDesktop = width > 800;
 
     return Container(
@@ -84,29 +85,65 @@ class Navbar extends StatelessWidget {
           const SizedBox(width: 20),
 
           if (isLoggedIn)
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'organize') {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AdminDashboard()));
+                } else if (value == 'profile') {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ProfilePage()));
+                } else if (value == 'logout') {
+                  authViewModel.logout();
+                  // Optionally, navigate to home page after logout
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomePage()),
+                    (Route<dynamic> route) => false,
+                  );
+                }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'organize',
+                  child: Text('Organize Events'),
                 ),
+                const PopupMenuItem<String>(
+                  value: 'profile',
+                  child: Text('Manage Profile'),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Text('Logout'),
+                ),
+              ],
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 18,
+                    backgroundImage: NetworkImage(
+                        "https://picsum.photos/id/64/200/200"), // Placeholder
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "Violet@gmail.com", // Placeholder
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  const Icon(Icons.arrow_drop_down, color: Colors.white),
+                ],
               ),
-              child: const Text("Profile"),
             )
           else
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
                 );
               },
               style: ElevatedButton.styleFrom(
