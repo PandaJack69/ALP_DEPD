@@ -1,3 +1,4 @@
+import 'package:alp_depd/view/widgets/custom_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/database_provider.dart';
@@ -190,27 +191,20 @@ class _SignInFormState extends State<SignInForm> {
               String? error = await provider.login(email, password);
 
               if (error == null) {
-                // 3. NAVIGASI LANGSUNG (Direct Redirection)
+                // SUKSES
                 if (mounted) {
-                  // Menggunakan pushNamedAndRemoveUntil agar user tidak bisa tekan 'back' ke halaman login
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/home',
-                    (route) => false,
-                  );
-
+                  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Welcome back!"),
-                      backgroundColor: Colors.green,
-                    ),
+                    const SnackBar(content: Text("Welcome back!"), backgroundColor: Colors.green),
                   );
                 }
               } else {
-                // 4. Handle Error
+                // GAGAL -> PAKAI POP UP ERROR
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(error), backgroundColor: Colors.red),
+                  showErrorDialog(
+                    context,
+                    title: "Gagal Masuk",
+                    message: error, // Pesan error dari provider (misal: "Password salah")
                   );
                 }
               }

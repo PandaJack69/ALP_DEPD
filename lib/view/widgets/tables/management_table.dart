@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../model/custom_models.dart'; // Sesuaikan path model EventModel kamu
+import '../custom_dialogs.dart';
 
 class ManagementTable extends StatelessWidget {
   final List<EventModel> data; 
@@ -114,27 +115,18 @@ class ManagementTable extends StatelessWidget {
   }
 
   // Dialog Konfirmasi Hapus
-  void _confirmDelete(BuildContext context, String id) {
-    showDialog(
-      context: context, 
-      builder: (_) => AlertDialog(
-        title: const Text("Hapus Kegiatan?"),
-        content: const Text("Data yang dihapus tidak bisa dikembalikan."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text("Batal")
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context); // Tutup dialog
-              onDelete(id); // Panggil fungsi hapus
-            }, 
-            child: const Text("Hapus", style: TextStyle(color: Colors.white))
-          )
-        ],
-      )
+  void _confirmDelete(BuildContext context, String id) async {
+    // PAKAI POP UP KONFIRMASI CUSTOM
+    bool confirm = await showConfirmationDialog(
+      context,
+      title: "Hapus Kegiatan?",
+      message: "Data akan dihapus permanen dan tidak bisa dikembalikan. Lanjutkan?",
+      confirmLabel: "Hapus",
+      isDestructive: true, // Merah
     );
+
+    if (confirm) {
+      onDelete(id); // Jalankan fungsi hapus
+    }
   }
 }

@@ -13,9 +13,33 @@ class _EventHeaderState extends State<EventHeader> {
   // 1. Controller untuk input search
   final TextEditingController _searchController = TextEditingController();
 
-  // 2. Fungsi pencarian (Logika sama dengan HomeHeader)
+  // 2. Fungsi pencarian
   void _onSearch(String query) {
     context.read<DatabaseProvider>().searchEvents(query);
+  }
+
+  // --- FUNGSI BARU: CEK LOGIN SEBELUM AKSI ---
+  Future<void> _checkLoginAndProceed(BuildContext context, VoidCallback action) async {
+    final provider = context.read<DatabaseProvider>();
+    
+    if (provider.isLoggedIn) {
+      // Jika sudah login, lanjut ke aksi (buka detail)
+      action();
+    } else {
+      // Jika belum, tampilkan Pop-up Warning
+      bool confirm = await showConfirmationDialog(
+        context,
+        title: "Akses Terbatas",
+        message: "Kamu harus login terlebih dahulu untuk melihat detail event ini.",
+        confirmLabel: "Login",
+        cancelLabel: "Batal",
+      );
+
+      // Arahkan ke Login Page jika user setuju
+      if (confirm && context.mounted) {
+        Navigator.pushNamed(context, '/login');
+      }
+    }
   }
 
   @override
@@ -26,11 +50,10 @@ class _EventHeaderState extends State<EventHeader> {
 
   @override
   Widget build(BuildContext context) {
-    // Ambil data dari database
     final dbProvider = context.watch<DatabaseProvider>();
     final now = DateTime.now();
 
-    // Filter event Upcoming (hanya yang belum lewat tanggal pendaftarannya)
+    // Filter event Upcoming
     final upcomingEvents = dbProvider.events.where((e) {
       return now.isBefore(e.openRegDate);
     }).toList();
@@ -61,11 +84,10 @@ class _EventHeaderState extends State<EventHeader> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ===== LEFT TEXT (DENGAN PADDING) =====
+                // ===== LEFT TEXT =====
                 SizedBox(
-                  width: 450, // Sedikit diperlebar agar padding muat
+                  width: 450,
                   child: Padding(
-                    // --- PERBAIKAN: Menambahkan Padding di sini ---
                     padding: const EdgeInsets.only(left: 60.0, top: 20.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -74,16 +96,14 @@ class _EventHeaderState extends State<EventHeader> {
                         const Text(
                           "Upcoming\nEvents",
                           style: TextStyle(
-                            fontFamily: 'VisuletPro', // Pastikan font terpasang
+                            fontFamily: 'VisuletPro',
                             color: Colors.white,
                             fontSize: 40,
                             fontWeight: FontWeight.bold,
                             height: 1.15,
                           ),
                         ),
-
                         const SizedBox(height: 14),
-
                         Container(
                           width: 90,
                           height: 4,
@@ -92,14 +112,12 @@ class _EventHeaderState extends State<EventHeader> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-
                         const SizedBox(height: 22),
-
                         const Text(
                           "This Isn’t Just an Event. It’s \nthe Experience Everyone \nWill Talk About.",
                           style: TextStyle(
                             color: Colors.white,
-                            fontFamily: 'VisuletPro', // Pastikan font terpasang
+                            fontFamily: 'VisuletPro',
                             fontSize: 16,
                             height: 1.6,
                           ),
@@ -127,15 +145,34 @@ class _EventHeaderState extends State<EventHeader> {
                           )
                         : ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.only(
-                              right: 40,
-                            ), // Padding kanan list
+                            padding: const EdgeInsets.only(right: 40),
                             itemCount: upcomingEvents.length,
                             separatorBuilder: (_, __) =>
                                 const SizedBox(width: 24),
                             itemBuilder: (context, index) {
-                              return UpcomingEventCard(
-                                event: upcomingEvents[index],
+                              final event = upcomingEvents[index];
+                              
+                              // --- MODIFIKASI DI SINI ---
+                              // Bungkus kartu dengan GestureDetector & AbsorbPointer
+                              return GestureDetector(
+                                onTap: () {
+                                  // Cek login dulu baru navigasi
+                                  _checkLoginAndProceed(context, () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => EventDetailPage(event: event),
+                                      ),
+                                    );
+                                  });
+                                },
+                                // AbsorbPointer mencegah UpcomingEventCard menerima klik langsung
+                                // sehingga GestureDetector di atasnya yang bekerja
+                                child: AbsorbPointer(
+                                  child: UpcomingEventCard(
+                                    event: event,
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -146,9 +183,8 @@ class _EventHeaderState extends State<EventHeader> {
 
             const SizedBox(height: 40),
 
-            // ===== SEARCH BAR (DENGAN PADDING) =====
+            // ===== SEARCH BAR =====
             Padding(
-              // Memberikan jarak kiri-kanan-bawah
               padding: const EdgeInsets.symmetric(
                 horizontal: 180,
                 vertical: 30,
@@ -162,7 +198,6 @@ class _EventHeaderState extends State<EventHeader> {
     );
   }
 
-  // ---------------- SEARCH BAR FUNCTIONAL ----------------
   Widget _buildSearchBar() {
     return Container(
       height: 56,
@@ -186,7 +221,6 @@ class _EventHeaderState extends State<EventHeader> {
           Expanded(
             child: TextField(
               controller: _searchController,
-              // --- PERBAIKAN: Menambahkan fungsi onChanged ---
               onChanged: _onSearch,
               style: const TextStyle(color: Color(0xFF263238)),
               decoration: const InputDecoration(

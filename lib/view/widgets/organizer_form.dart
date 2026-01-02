@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart'; 
 import 'package:image_picker/image_picker.dart'; 
 import '../../viewmodel/database_provider.dart';
+import 'custom_dialogs.dart'; // Karena satu folder (widgets), langsung panggil saja
 
 class OrganizerForm extends StatefulWidget {
   final String category; 
@@ -118,69 +119,119 @@ class _OrganizerFormState extends State<OrganizerForm> {
   }
 
   // === LOGIC SIMPAN DATA ===
+  // === LOGIC SIMPAN DATA (FULL CODE) ===
   Future<void> _saveData() async {
-    // 1. Validasi Umum
+    // 1. VALIDASI UMUM
     if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nama kegiatan harus diisi")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nama kegiatan harus diisi")),
+      );
+      return;
+    }
+    
+    if (_descController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Deskripsi kegiatan harus diisi")),
+      );
       return;
     }
 
-    // 2. Validasi Khusus Lomba
+    // 2. VALIDASI KHUSUS LOMBA
     if (_selectedCategory == 'Lomba') {
-       if (_feeController.text.isEmpty) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Biaya pendaftaran lomba harus diisi (isi 0 jika gratis)")));
-         return;
-       }
-       if (_subEventsController.text.isEmpty) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cabang lomba (Sub Event) harus diisi")));
-         return;
-       }
-    } 
-    // 3. Validasi Khusus Event/Pengmas
+      if (_feeController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Biaya pendaftaran harus diisi (isi 0 jika gratis)")),
+        );
+        return;
+      }
+      if (_subEventsController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Cabang lomba (Sub Event) harus diisi")),
+        );
+        return;
+      }
+    }
+    // 3. VALIDASI KHUSUS EVENT/PENGMAS
     else {
       if (_divisionsController.text.isEmpty) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Divisi kepanitiaan harus diisi")));
-         return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Divisi kepanitiaan harus diisi")),
+        );
+        return;
       }
     }
 
+    // --- 4. TAMPILKAN POP-UP KONFIRMASI (FITUR BARU) ---
+    // Cek apakah ini mode Edit atau Buat Baru
+    bool isUpdate = widget.initialData != null;
+    
+    bool confirm = await showConfirmationDialog(
+      context,
+      title: isUpdate ? "Simpan Perubahan?" : "Publikasikan Kegiatan?",
+      message: isUpdate 
+          ? "Data kegiatan lama akan diperbarui dengan data baru ini."
+          : "Kegiatan akan dipublikasikan dan dapat dilihat oleh semua pengguna.",
+      confirmLabel: isUpdate ? "Simpan" : "Publish",
+    );
+
+    // Jika user pilih "Batal", hentikan proses di sini
+    if (!confirm) return; 
+    // ---------------------------------------------------
+
+    // Mulai Loading
     setState(() => _isLoading = true);
+    
     final provider = context.read<DatabaseProvider>();
     String? finalPosterUrl = _uploadedPosterUrl; 
 
-    // Upload Poster Baru (Jika ada)
+    // 5. PROSES UPLOAD POSTER (JIKA ADA GAMBAR BARU)
     if (_selectedImageBytes != null && _selectedFileExt != null) {
-      final newUrl = await provider.uploadEventPoster(_selectedImageBytes!, _selectedFileExt!);
+      final newUrl = await provider.uploadEventPoster(
+        _selectedImageBytes!, 
+        _selectedFileExt!
+      );
+      
       if (newUrl != null) {
         finalPosterUrl = newUrl;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal upload poster")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal upload poster, coba lagi.")),
+        );
         setState(() => _isLoading = false);
         return;
       }
     }
 
-    // Persiapan Data
+    // 6. PERSIAPAN DATA ARRAY & FORMATTING
     String finalFee = "0"; 
     List<String> subEventsList = [];
     List<String> divisionsList = [];
 
+    // Pecah string input user (dipisah koma) menjadi List
     if (_selectedCategory == 'Lomba') {
       finalFee = _feeController.text.isEmpty ? "0" : _feeController.text;
-      subEventsList = _subEventsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      subEventsList = _subEventsController.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     } else {
       // Event & Pengmas
-      divisionsList = _divisionsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      divisionsList = _divisionsController.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
 
     String? error;
     
-    // Panggil Provider (Add atau Update)
+    // 7. PANGGIL FUNGSI DATABASE (ADD atau UPDATE)
     if (widget.initialData == null) {
-      // MODE CREATE
+      // MODE CREATE (BUAT BARU)
       error = await provider.addEvent(
         title: _titleController.text,
-        category: _selectedCategory.toLowerCase(), // Penting: lowercase
+        category: _selectedCategory.toLowerCase(), // Simpan lowercase agar konsisten
         description: _descController.text,
         startReg: _startRegDate,
         endReg: _endRegDate,
@@ -197,7 +248,7 @@ class _OrganizerFormState extends State<OrganizerForm> {
         subEvents: subEventsList, // Masuk ke kolom 'sub_events'
       );
     } else {
-      // MODE UPDATE (Jika sudah ada fitur updateEvent di provider)
+      // MODE UPDATE (EDIT DATA LAMA)
       error = await provider.updateEvent(
         eventId: widget.initialData!.id, // ID event yang diedit
         title: _titleController.text,
@@ -221,11 +272,19 @@ class _OrganizerFormState extends State<OrganizerForm> {
 
     setState(() => _isLoading = false);
 
+    // 8. TAMPILKAN HASIL
     if (error == null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil disimpan!"), backgroundColor: Colors.green));
-      Navigator.pop(context); 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Berhasil disimpan!"), backgroundColor: Colors.green),
+      );
+      Navigator.pop(context); // Kembali ke dashboard
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error ?? "Gagal"), backgroundColor: Colors.red));
+      // Jika gagal, tampilkan error (bisa pakai dialog error juga di sini)
+      await showErrorDialog(
+        context,
+        title: "Gagal Menyimpan",
+        message: error ?? "Terjadi kesalahan yang tidak diketahui.",
+      );
     }
   }
 

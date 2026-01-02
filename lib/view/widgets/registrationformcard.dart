@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:alp_depd/model/custom_models.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
@@ -9,10 +9,7 @@ import '../../viewmodel/database_provider.dart';
 class RegistrationFormCard extends StatefulWidget {
   final EventModel event;
 
-  const RegistrationFormCard({
-    super.key,
-    required this.event,
-  });
+  const RegistrationFormCard({super.key, required this.event});
 
   @override
   State<RegistrationFormCard> createState() => _RegistrationFormCardState();
@@ -31,14 +28,14 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
   String? selectedSubEvent; // Untuk Lomba
   List<String> divisions = [];
   List<String> subEvents = [];
-  
-  String userStatus = "Mahasiswa"; 
+
+  String userStatus = "Mahasiswa";
   bool isAccessDenied = false; // Flag untuk blokir akses
 
   PlatformFile? cvFile;
   PlatformFile? portfolioFile;
-  PlatformFile? paymentFile; 
-  
+  PlatformFile? paymentFile;
+
   String? _existingCvUrl;
   String? _existingPortfolioUrl;
 
@@ -47,20 +44,21 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
   @override
   void initState() {
     super.initState();
-    
+
     final provider = context.read<DatabaseProvider>();
     final user = provider.currentUser;
     final category = widget.event.category.toLowerCase();
 
     // 1. CEK VALIDASI AKSES ROLE
     if (user != null) {
-      String userRole = user.role.toLowerCase() ?? "";
-      
+      String userRole = user.role.toLowerCase();
+
       // Siswa tidak boleh ikut Event atau Pengmas
-      if (userRole == "siswa" && (category == "event" || category == "pengmas")) {
+      if (userRole == "siswa" &&
+          (category == "event" || category == "pengmas")) {
         isAccessDenied = true;
       }
-      
+
       // Set status default berdasarkan profile database
       userStatus = (userRole == "siswa") ? "Siswa" : "Mahasiswa";
     }
@@ -95,18 +93,126 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
     return null;
   }
 
+  // --- FUNGSI POP-UP DIALOG HASIL ---
+  Future<void> _showResultDialog({
+    required bool isSuccess,
+    required String title,
+    required String message,
+  }) async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false, // User harus tekan tombol untuk menutup
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. ICON (Centang Hijau / Silang Merah)
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color:
+                        isSuccess ? Colors.green.shade50 : Colors.red.shade50,
+                  ),
+                  child: Icon(
+                    isSuccess ? Icons.check_circle : Icons.cancel,
+                    size: 60,
+                    color: isSuccess ? Colors.green : Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 2. JUDUL
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: isSuccess
+                        ? Colors.green.shade800
+                        : Colors.red.shade800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // 3. PESAN
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+                const SizedBox(height: 30),
+
+                // 4. TOMBOL (Selesai / Coba Lagi)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isSuccess ? Colors.green : Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup Dialog
+
+                      if (isSuccess) {
+                        Navigator.pop(
+                            context); // Jika Sukses, Tutup Form & Balik ke Halaman Event
+                      }
+                      // Jika Gagal, hanya tutup dialog agar user bisa edit form
+                    },
+                    child: Text(
+                      isSuccess ? "Selesai" : "Coba Lagi",
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // --- FUNGSI SUBMIT FORM ---
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
     final category = widget.event.category.toLowerCase();
 
-    if (category == 'event' && (cvFile == null && (_existingCvUrl == null || _existingCvUrl!.isEmpty))) {
-      _showError("CV wajib dilampirkan untuk kategori Event");
+    // Validasi Dokumen (Manual)
+    if (category == 'event' &&
+        (cvFile == null &&
+            (_existingCvUrl == null || _existingCvUrl!.isEmpty))) {
+      _showResultDialog(
+        isSuccess: false,
+        title: "Dokumen Kurang",
+        message: "CV wajib dilampirkan untuk kategori Event.",
+      );
       return;
     }
 
     if (category == 'lomba' && paymentFile == null) {
-      _showError("Bukti pembayaran wajib diunggah");
+      _showResultDialog(
+        isSuccess: false,
+        title: "Dokumen Kurang",
+        message: "Bukti pembayaran wajib diunggah.",
+      );
       return;
     }
 
@@ -118,40 +224,68 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
       String? finalPfUrl;
       String? finalPaymentUrl;
 
+      // Upload File
       if (category == 'event') {
-        finalCvUrl = cvFile != null ? await provider.uploadFile(cvFile!.bytes!, cvFile!.extension!, "cv") : _existingCvUrl;
-        finalPfUrl = portfolioFile != null ? await provider.uploadFile(portfolioFile!.bytes!, portfolioFile!.extension!, "portfolio") : _existingPortfolioUrl;
+        finalCvUrl = cvFile != null
+            ? await provider.uploadFile(
+                cvFile!.bytes!,
+                cvFile!.extension!,
+                "cv",
+              )
+            : _existingCvUrl;
+        finalPfUrl = portfolioFile != null
+            ? await provider.uploadFile(
+                portfolioFile!.bytes!,
+                portfolioFile!.extension!,
+                "portfolio",
+              )
+            : _existingPortfolioUrl;
       }
 
       if (category == 'lomba' && paymentFile != null) {
-        finalPaymentUrl = await provider.uploadFile(paymentFile!.bytes!, paymentFile!.extension!, "payment");
+        finalPaymentUrl = await provider.uploadFile(
+          paymentFile!.bytes!,
+          paymentFile!.extension!,
+          "payment",
+        );
       }
 
-      // Kirim pilihan Sub-Event jika Lomba, kirim Divisi jika Event/Pengmas
+      // Simpan ke Database
       final success = await provider.registerToEvent(
         widget.event.id,
-        (category == 'lomba') ? (selectedSubEvent ?? "Umum") : (selectedDivision ?? "Umum"),
+        (category == 'lomba')
+            ? (selectedSubEvent ?? "Umum")
+            : (selectedDivision ?? "Umum"),
         finalCvUrl,
         finalPaymentUrl ?? finalPfUrl,
       );
 
       if (success) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil mendaftar!"), backgroundColor: Colors.green));
-          Navigator.pop(context);
+          // TAMPILKAN DIALOG SUKSES
+          await _showResultDialog(
+            isSuccess: true,
+            title: "Pendaftaran Berhasil!",
+            message:
+                "Data Anda telah tersimpan. Silakan tunggu informasi selanjutnya.",
+          );
         }
       } else {
         throw "Gagal menyimpan data ke database";
       }
     } catch (e) {
-      _showError("Terjadi kesalahan: $e");
+      if (mounted) {
+        // TAMPILKAN DIALOG GAGAL
+        await _showResultDialog(
+          isSuccess: false,
+          title: "Pendaftaran Gagal",
+          message:
+              "Terjadi kesalahan: $e.\nSilakan periksa koneksi dan coba lagi.",
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
@@ -171,58 +305,127 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
             constraints: const BoxConstraints(maxWidth: 900),
             child: Card(
               elevation: 12,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               margin: const EdgeInsets.fromLTRB(20, 0, 20, 40),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 40,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      Text("Pendaftaran ${widget.event.category}", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xff143952))),
+                      Text(
+                        "Registration Form",
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'VisuletPro',
+                          color: Color(0xff143952),
+                        ),
+                      ),
+                      Text(
+                        "This Isn’t Just an Event. It’s the Experience\nEveryone Will Talk About.",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontFamily: 'VisuletPro',
+                          color: Color(0xff143952),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 30),
 
                       // Status dikunci berdasarkan role asli di database
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildLockedStatusChip(userStatus),
-                        ],
+                        children: [_buildLockedStatusChip(userStatus)],
                       ),
                       const SizedBox(height: 30),
 
-                      Row(children: [
-                        Expanded(child: buildInput("Nama Lengkap", nameController)),
-                        const SizedBox(width: 15),
-                        Expanded(child: buildInput(userStatus == "Mahasiswa" ? "Universitas" : "Sekolah", institutionController)),
-                      ]),
-                      const SizedBox(height: 15),
-                      
-                      Row(children: [
-                        if (userStatus == "Mahasiswa") ...[
-                          Expanded(child: buildInput("Jurusan", majorController)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: buildInput("Nama Lengkap", nameController),
+                          ),
                           const SizedBox(width: 15),
+                          Expanded(
+                            child: buildInput(
+                              userStatus == "Mahasiswa"
+                                  ? "Universitas"
+                                  : "Sekolah",
+                              institutionController,
+                            ),
+                          ),
                         ],
-                        Expanded(child: buildInput("Tahun / Angkatan", yearController)),
-                      ]),
+                      ),
                       const SizedBox(height: 15),
-                      
-                      Row(children: [
-                        Expanded(child: buildInput("Nomor WhatsApp", phoneController)),
-                        const SizedBox(width: 15),
-                        // Dropdown Dinamis: Sub Event (Lomba) atau Divisi (Event/Pengmas)
-                        Expanded(child: (category == 'lomba') ? buildSubEventDropdown() : buildDivisionDropdown()),
-                      ]),
+
+                      Row(
+                        children: [
+                          if (userStatus == "Mahasiswa") ...[
+                            Expanded(
+                              child: buildInput("Jurusan", majorController),
+                            ),
+                            const SizedBox(width: 15),
+                          ],
+                          Expanded(
+                            child: buildInput(
+                              "Tahun / Angkatan",
+                              yearController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: buildInput(
+                              "Nomor WhatsApp",
+                              phoneController,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          // Dropdown Dinamis: Sub Event (Lomba) atau Divisi (Event/Pengmas)
+                          Expanded(
+                            child: (category == 'lomba')
+                                ? buildSubEventDropdown()
+                                : buildDivisionDropdown(),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 25),
 
                       if (category == 'event') ...[
-                        _buildFileSection("Curriculum Vitae", cvFile, _existingCvUrl, (f) => setState(() => cvFile = f), () => setState(() => _existingCvUrl = null)),
+                        _buildFileSection(
+                          "Curriculum Vitae",
+                          cvFile,
+                          _existingCvUrl,
+                          (f) => setState(() => cvFile = f),
+                          () => setState(() => _existingCvUrl = null),
+                        ),
                         const SizedBox(height: 25),
-                        _buildFileSection("Portfolio Opsional", portfolioFile, _existingPortfolioUrl, (f) => setState(() => portfolioFile = f), () => setState(() => _existingPortfolioUrl = null)),
+                        _buildFileSection(
+                          "Portfolio Opsional",
+                          portfolioFile,
+                          _existingPortfolioUrl,
+                          (f) => setState(() => portfolioFile = f),
+                          () => setState(() => _existingPortfolioUrl = null),
+                        ),
                       ],
 
                       if (category == 'lomba') ...[
-                        _buildFileSection("Bukti Transfer Pendaftaran", paymentFile, null, (f) => setState(() => paymentFile = f), () {}),
+                        _buildFileSection(
+                          "Bukti Transfer Pendaftaran",
+                          paymentFile,
+                          null,
+                          (f) => setState(() => paymentFile = f),
+                          () {},
+                        ),
                       ],
 
                       const SizedBox(height: 40),
@@ -243,12 +446,22 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 100, horizontal: 20),
       padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         children: [
           const Icon(Icons.lock_person, size: 80, color: Colors.red),
           const SizedBox(height: 20),
-          const Text("Akses Terbatas", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red)),
+          const Text(
+            "Akses Terbatas",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
           const SizedBox(height: 10),
           const Text(
             "Maaf, pendaftaran Event dan Pengmas hanya terbuka untuk Mahasiswa. Siswa hanya diperbolehkan mengikuti kategori Lomba.",
@@ -256,7 +469,10 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 30),
-          ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("Kembali ke Beranda"))
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Kembali ke Beranda"),
+          ),
         ],
       ),
     );
@@ -266,7 +482,10 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
     return Chip(
       label: Text("Terdaftar sebagai: $label"),
       backgroundColor: const Color(0xff3F054F),
-      labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      labelStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
       avatar: const Icon(Icons.verified, color: Colors.white, size: 18),
     );
   }
@@ -276,13 +495,31 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 150, horizontal: 20),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [Color(0xff123C52), Color(0xff3F054F)]),
+        gradient: LinearGradient(
+          colors: [Color(0xff123C52), Color(0xff3F054F)],
+        ),
       ),
       child: Column(
         children: [
-          Text(widget.event.name, style: const TextStyle(fontSize: 60, fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center),
+          Text(
+            widget.event.name,
+            style: const TextStyle(
+              fontSize: 60,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 10),
-          Text("Kategori: ${widget.event.category}", style: const TextStyle(fontSize: 22, color: Colors.white70)),
+          Text(
+            "Find Your Next Experience",
+            style: const TextStyle(
+              fontSize: 22,
+              color: Colors.white,
+              fontStyle: FontStyle.italic,
+              fontFamily: 'VisuletPro',
+            ),
+          ),
         ],
       ),
     );
@@ -292,14 +529,26 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Pilih Cabang Lomba", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
+        const Text(
+          "Pilih Cabang Lomba",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xffA0025B),
+          ),
+        ),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
           initialValue: selectedSubEvent,
-          items: subEvents.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          items: subEvents
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
           onChanged: (value) => setState(() => selectedSubEvent = value),
           validator: (v) => v == null ? "Wajib pilih cabang" : null,
-          decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         ),
       ],
     );
@@ -309,20 +558,38 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Pilih Divisi", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
+        const Text(
+          "Pilih Divisi",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xffA0025B),
+          ),
+        ),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
           initialValue: selectedDivision,
-          items: divisions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+          items: divisions
+              .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+              .toList(),
           onChanged: (value) => setState(() => selectedDivision = value),
           validator: (v) => v == null ? "Wajib pilih divisi" : null,
-          decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildFileSection(String title, PlatformFile? file, String? existingUrl, Function(PlatformFile?) onPick, VoidCallback onRem) {
+  Widget _buildFileSection(
+    String title,
+    PlatformFile? file,
+    String? existingUrl,
+    Function(PlatformFile?) onPick,
+    VoidCallback onRem,
+  ) {
     return buildUploadBox(
       title: title,
       file: file,
@@ -342,10 +609,17 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xff3F054F),
           padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(40),
+          ),
         ),
         onPressed: _isLoading ? null : _submitForm,
-        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Kirim Pendaftaran", style: TextStyle(fontSize: 18, color: Colors.white)),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                "Kirim Pendaftaran",
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
       ),
     );
   }
@@ -354,46 +628,124 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xffA0025B),
+          ),
+        ),
         const SizedBox(height: 5),
         TextFormField(
           controller: controller,
           validator: (v) => v == null || v.isEmpty ? "Wajib diisi" : null,
-          decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         ),
       ],
     );
   }
 
-  Widget buildUploadBox({required String title, PlatformFile? file, String? existingUrl, required VoidCallback onPick, required VoidCallback onRemove}) {
-    bool hasFile = file != null || (existingUrl != null && existingUrl.isNotEmpty);
+  Widget buildUploadBox({
+    required String title,
+    PlatformFile? file,
+    String? existingUrl,
+    required VoidCallback onPick,
+    required VoidCallback onRemove,
+  }) {
+    bool hasFile =
+        file != null || (existingUrl != null && existingUrl.isNotEmpty);
     bool isImage = false;
     if (file != null) {
-      isImage = ["jpg", "jpeg", "png"].contains(file.extension?.toLowerCase());
+      isImage =
+          ["jpg", "jpeg", "png"].contains(file.extension?.toLowerCase());
     } else if (existingUrl != null) {
-      isImage = existingUrl.contains('.jpg') || existingUrl.contains('.jpeg') || existingUrl.contains('.png');
+      isImage = existingUrl.contains('.jpg') ||
+          existingUrl.contains('.jpeg') ||
+          existingUrl.contains('.png');
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
+        Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xffA0025B),
+          ),
+        ),
         const SizedBox(height: 10),
         Stack(
           children: [
             Container(
-              height: 200, width: double.infinity,
-              decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400), borderRadius: BorderRadius.circular(12), color: Colors.grey.shade50),
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey.shade50,
+              ),
               child: !hasFile
-                  ? Center(child: ElevatedButton.icon(onPressed: onPick, icon: const Icon(Icons.upload_file), label: const Text("Pilih File")))
+                  ? Center(
+                      child: ElevatedButton.icon(
+                        onPressed: onPick,
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text("Pilih File"),
+                      ),
+                    )
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: isImage
-                          ? (file != null ? (kIsWeb ? Image.memory(file.bytes!, fit: BoxFit.cover) : Image.file(File(file.path!), fit: BoxFit.cover)) : Image.network(existingUrl!, fit: BoxFit.cover))
-                          : Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.description, size: 50, color: Colors.blue), Text(file?.name ?? "Dokumen")])),
+                          ? (file != null
+                              ? (kIsWeb
+                                  ? Image.memory(
+                                      file.bytes!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.file(
+                                      File(file.path!),
+                                      fit: BoxFit.cover,
+                                    ))
+                              : Image.network(
+                                  existingUrl!,
+                                  fit: BoxFit.cover,
+                                ))
+                          : Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.description,
+                                    size: 50,
+                                    color: Colors.blue,
+                                  ),
+                                  Text(file?.name ?? "Dokumen"),
+                                ],
+                              ),
+                            ),
                     ),
             ),
-            if (hasFile) Positioned(top: 10, right: 10, child: CircleAvatar(backgroundColor: Colors.red, radius: 18, child: IconButton(icon: const Icon(Icons.close, color: Colors.white, size: 18), onPressed: onRemove))),
+            if (hasFile)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: CircleAvatar(
+                  backgroundColor: Colors.red,
+                  radius: 18,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    onPressed: onRemove,
+                  ),
+                ),
+              ),
           ],
         ),
       ],
