@@ -10,23 +10,30 @@ class DatabaseProvider extends ChangeNotifier {
   UserProfile? _currentUser;
 
   // List Global (Untuk User Biasa melihat semua event)
+  // List Global
   List<EventModel> _events = [];
 
-  // List Khusus Dashboard (Untuk Organizer melihat event buatannya sendiri)
+  // List Khusus Dashboard
   List<EventModel> _myEvents = [];
 
   List<UserProfile> _allUsers = [];
   bool _isLoading = false;
 
+  // --- BAGIAN INI YANG PERLU DIPERBAIKI ---
+  
   List<EventModel> _filteredEvents = [];
-  List<EventModel> get event => _filteredEvents.isEmpty && _searchQuery.isEmpty 
-    ? _events 
-    : _filteredEvents;
   String _searchQuery = "";
 
+  // 1. TAMBAHKAN GETTER INI (Supaya error merah hilang)
+  String get searchQuery => _searchQuery; 
+  List<EventModel> get filteredEvents => _filteredEvents;
+
+  // Getter events yang sudah ada (tetap biarkan)
+  List<EventModel> get events => _searchQuery.isEmpty ? _events : _filteredEvents;
+
+  // Getter lainnya (tetap biarkan)
   UserProfile? get currentUser => _currentUser;
-  List<EventModel> get events => _events;
-  List<EventModel> get myEvents => _myEvents; // Getter baru
+  List<EventModel> get myEvents => _myEvents;
   List<UserProfile> get allUsers => _allUsers;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
@@ -39,21 +46,25 @@ class DatabaseProvider extends ChangeNotifier {
       await _fetchProfile(user.id);
     }
   }
+  
   void searchEvents(String query) {
-  _searchQuery = query.toLowerCase();
-  
-  if (_searchQuery.isEmpty) {
-    _filteredEvents = [];
-  } else {
-    _filteredEvents = _events.where((event) {
-      final name = event.name.toLowerCase();
-      final category = event.category.toLowerCase();
-      return name.contains(_searchQuery) || category.contains(_searchQuery);
-    }).toList();
+    _searchQuery = query.toLowerCase();
+    
+    if (_searchQuery.isEmpty) {
+      // Jika search bar dikosongkan, reset hasil filter
+      _filteredEvents = [];
+    } else {
+      // Filter event berdasarkan nama ATAU kategori
+      _filteredEvents = _events.where((event) {
+        final name = event.name.toLowerCase();
+        final category = event.category.toLowerCase();
+        return name.contains(_searchQuery) || category.contains(_searchQuery);
+      }).toList();
+    }
+    
+    // Beritahu UI untuk update tampilan
+    notifyListeners(); 
   }
-  
-  notifyListeners(); // Refresh UI di semua halaman yang memantau events
-}
 
   Future<String?> login(String email, String password) async {
     _setLoading(true);

@@ -9,19 +9,18 @@ class HomeHeader extends StatefulWidget {
 }
 
 class _HomeHeaderState extends State<HomeHeader> {
-  // 1. Tambahkan Controller
+  // 1. Controller untuk menangkap teks input
   final TextEditingController _searchController = TextEditingController();
 
-  // 2. Fungsi untuk memicu pencarian
-  void _onSearch() {
-    final query = _searchController.text.trim();
-    // Panggil fungsi search yang ada di DatabaseProvider
+  // 2. Fungsi pencarian yang dipanggil saat teks berubah
+  void _onSearch(String query) {
+    // Memanggil provider untuk memfilter list event
     context.read<DatabaseProvider>().searchEvents(query);
   }
 
   @override
   void dispose() {
-    _searchController.dispose(); // Jangan lupa dispose
+    _searchController.dispose(); // Bersihkan controller saat widget dihancurkan
     super.dispose();
   }
 
@@ -29,7 +28,8 @@ class _HomeHeaderState extends State<HomeHeader> {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+
+      padding: const EdgeInsets.symmetric(),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topRight,
@@ -41,23 +41,42 @@ class _HomeHeaderState extends State<HomeHeader> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Navbar(isLoggedIn: widget.isLoggedIn, activePage: "Home"),
-          const SizedBox(height: 60),
-          const Text(
-            "Find Your Next Experience",
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Discover & Promote\nUpcoming Events",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              height: 1.2,
+          const SizedBox(height: 80),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 140,),
+            child: const Text(
+              "Find Your Next Experience",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontFamily: 'VisuletPro',
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
-          const SizedBox(height: 30),
-          _buildSearchBar(),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 140),
+            child: const Text(
+              "Discover & Promote\nUpcoming Events",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 75,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'VisuletPro',
+                height: 1.2,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 180,
+              vertical: 50,
+            ), // Atur angka sesuai keinginan
+            child: _buildSearchBar(),
+          ),
+          const SizedBox(height: 50),
         ],
       ),
     );
@@ -93,8 +112,10 @@ class _HomeHeaderState extends State<HomeHeader> {
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: _searchController, // Hubungkan controller
-              onSubmitted: (_) => _onSearch(), // Pencarian saat tekan 'Enter' di keyboard
+              controller: _searchController,
+              // FUNGSI UTAMA: onChanged memicu pencarian real-time
+              onChanged: _onSearch,
+
               style: const TextStyle(color: Color(0xFF263238)),
               decoration: const InputDecoration(
                 hintText: "Search events by name or category...",
@@ -103,10 +124,13 @@ class _HomeHeaderState extends State<HomeHeader> {
               ),
             ),
           ),
-          // Tombol Kirim/Search
+          // Tombol kirim opsional (tetap bisa diklik, tapi search sudah otomatis)
           GestureDetector(
-            onTap: _onSearch, 
-            child: Icon(Icons.send, color: const Color(0xFF263238).withOpacity(0.9)),
+            onTap: () => _onSearch(_searchController.text),
+            child: Icon(
+              Icons.send,
+              color: const Color(0xFF263238).withOpacity(0.9),
+            ),
           ),
         ],
       ),

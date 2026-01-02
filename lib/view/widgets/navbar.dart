@@ -39,6 +39,47 @@ class Navbar extends StatelessWidget {
     );
   }
 
+  // --- FUNGSI BARU: MENAMPILKAN DIALOG KONFIRMASI LOGOUT ---
+  void _showLogoutDialog(BuildContext context, DatabaseProvider dbProvider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Konfirmasi Logout"),
+          content: const Text("Apakah Anda yakin ingin keluar akun?"),
+          actions: [
+            // Tombol Batal
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+              },
+              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+            ),
+            // Tombol Ya (Logout)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog dulu
+                
+                // Proses Logout
+                dbProvider.logout();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              child: const Text("Ya, Keluar"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -47,23 +88,19 @@ class Navbar extends StatelessWidget {
     final bool isDesktop = width > 800;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xff123C52), Color(0xff3F054F)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [Color(0xFF3F054F), Color(0xFF291F51), Color(0xFF103D52)],
         ),
       ),
       child: Row(
         children: [
-          const Text(
-            "The Event",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+          Image.asset(
+            'assets/Image/Logo.png',
+            height: 80,
           ),
           const Spacer(),
 
@@ -93,7 +130,7 @@ class Navbar extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => const OrganizerDashboard(),
                     ),
-                  ); // Atau OrganizerDashboard
+                  );
                 } else if (value == 'admin') {
                   Navigator.push(
                     context,
@@ -109,17 +146,11 @@ class Navbar extends StatelessWidget {
                     ),
                   );
                 } else if (value == 'logout') {
-                  dbProvider.logout();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomePage()),
-                    (Route<dynamic> route) => false,
-                  );
+                  // --- PERUBAHAN DI SINI: Panggil Dialog Dulu ---
+                  _showLogoutDialog(context, dbProvider);
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                // --- LOGIKA PENGECEKAN ROLE ---
-               
                 if (user?.role == 'organizer')
                   const PopupMenuItem<String>(
                     value: 'organize',
@@ -130,7 +161,6 @@ class Navbar extends StatelessWidget {
                     value: 'admin',
                     child: Text('Manage Admin'),
                   ),
-                // ------------------------------
                 const PopupMenuItem<String>(
                   value: 'profile',
                   child: Text('Manage Profile'),
@@ -138,7 +168,7 @@ class Navbar extends StatelessWidget {
                 const PopupMenuDivider(),
                 const PopupMenuItem<String>(
                   value: 'logout',
-                  child: Text('Logout'),
+                  child: Text('Logout', style: TextStyle(color: Colors.red)), // Opsional: Beri warna merah
                 ),
               ],
               child: Row(
@@ -148,10 +178,10 @@ class Navbar extends StatelessWidget {
                     backgroundColor: Colors.grey[300],
                     backgroundImage:
                         (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
-                        ? NetworkImage(user.avatarUrl!)
-                        : const NetworkImage(
-                            "https://cdn-icons-png.freepik.com/512/6522/6522516.png",
-                          ),
+                            ? NetworkImage(user.avatarUrl!)
+                            : const NetworkImage(
+                                "https://cdn-icons-png.freepik.com/512/6522/6522516.png",
+                              ),
                   ),
                   const SizedBox(width: 10),
                   Text(

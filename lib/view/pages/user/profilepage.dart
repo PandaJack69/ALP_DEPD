@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:alp_depd/view/widgets/footer_section.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _nameCtrl = TextEditingController(text: user?.fullName ?? "");
     _emailCtrl = TextEditingController(text: user?.email ?? "");
     _institutionCtrl = TextEditingController(text: user?.institution ?? "");
-    _roleCtrl = TextEditingController(text: user?.role?.toUpperCase() ?? "MAHASISWA");
+    _roleCtrl = TextEditingController(text: user?.role.toUpperCase() ?? "MAHASISWA");
     
     _phoneCtrl = TextEditingController(text: user?.phone ?? "");
     _majorCtrl = TextEditingController(text: user?.major ?? "");
@@ -142,7 +143,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = provider.currentUser;
     
     // Logika pengecekan Siswa
-    bool isSiswa = user?.role?.toLowerCase() == "siswa";
+    bool isSiswa = user?.role.toLowerCase() == "siswa";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -268,10 +269,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             
-            Container(
-              width: double.infinity, color: const Color(0xFF1E1135), padding: const EdgeInsets.symmetric(vertical: 30),
-              child: const Center(child: Text("© 2025 The Event. All rights reserved", style: TextStyle(color: Colors.white54, fontSize: 12))),
-            ),
+            const FooterSection(),
           ],
         ),
       ),
@@ -309,7 +307,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 200, width: double.infinity, margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), image: DecorationImage(image: MemoryImage(newBytes), fit: BoxFit.cover)),
                 )
-              else if (isImageOld && newBytes == null && existingUrl != null)
+              else if (isImageOld && newBytes == null)
                 Container(
                   height: 200, width: double.infinity, margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), image: DecorationImage(image: NetworkImage(existingUrl), fit: BoxFit.cover)),

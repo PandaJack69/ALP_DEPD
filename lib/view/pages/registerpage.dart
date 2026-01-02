@@ -64,7 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 16),
                     // Dropdown Role
                     DropdownButtonFormField<String>(
-                      value: _selectedRole,
+                      initialValue: _selectedRole,
                       decoration: const InputDecoration(labelText: "Register As", prefixIcon: Icon(Icons.badge), border: OutlineInputBorder()),
                       items: ['mahasiswa', 'siswa'].map((role) {
                         return DropdownMenuItem(value: role, child: Text(role.toUpperCase()));

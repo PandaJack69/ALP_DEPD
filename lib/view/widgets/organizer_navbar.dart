@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/database_provider.dart'; // Pastikan path ini benar sesuai struktur folder Anda
+import 'custom_dialogs.dart'; // Sesuaikan path jika perlu '../custom_dialogs.dart'
 
 class OrganizerNavbar extends StatelessWidget {
   final String activeTab;
@@ -67,19 +68,29 @@ class OrganizerNavbar extends StatelessWidget {
               if (value == 'home') {
                 // Navigasi ke halaman home
                 Navigator.pushNamed(context, '/home');
+                // ...
               } else if (value == 'logout') {
-                // 1. Eksekusi fungsi logout di Provider
-                await dbProvider.logout();
+                bool confirm = await showConfirmationDialog(
+                  context,
+                  title: "Keluar Dashboard",
+                  message:
+                      "Yakin ingin keluar? Pekerjaan yang belum disimpan mungkin hilang.",
+                  confirmLabel: "Logout",
+                  isDestructive: true,
+                );
 
-                // 2. Navigasi ke Home dan bersihkan stack
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/home',
-                    (route) => false,
-                  );
+                if (confirm) {
+                  await dbProvider.logout();
+                  if (context.mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/home',
+                      (route) => false,
+                    );
+                  }
                 }
               }
+              // ...
             },
             offset: const Offset(0, 50),
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[

@@ -31,11 +31,22 @@ class RecentEventsSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
+                color: Color(0xFF143952),
               ),
             ),
           ),
-
+          
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20), // Atur jarak kiri-kanan di sini
+            child: Container(
+              width: 110,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFF143952),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
 
           const Padding(
@@ -43,10 +54,7 @@ class RecentEventsSection extends StatelessWidget {
             child: Text(
               "This isn't Just an Event, It's the Experience\n"
               "Everyone Will Talk About.",
-              style: TextStyle(
-                color: Colors.grey,
-                height: 1.5,
-              ),
+              style: TextStyle(color: Color(0xFF143952), height: 1.5),
             ),
           ),
 
@@ -63,7 +71,7 @@ class RecentEventsSection extends StatelessWidget {
                 return EventCard(
                   event: recentEvents[index],
                   tag: "Just Now",
-                  tagColor: Colors.blue, 
+                  tagColor: Colors.blue,
                 );
               },
             ),

@@ -43,7 +43,19 @@ class LastChanceEventsSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 34,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
+                color: Color(0xFF143952),
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20), // Atur jarak kiri-kanan di sini
+            child: Container(
+              width: 200,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFF143952),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
@@ -54,7 +66,7 @@ class LastChanceEventsSection extends StatelessWidget {
               "This Isn’t Just an Event. It’s the Experience\n"
               "Everyone Will Talk About.",
               style: TextStyle(
-                color: Colors.grey,
+                color: Color(0xFF143952),
                 height: 1.5,
               ),
             ),
