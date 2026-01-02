@@ -11,10 +11,9 @@ import 'package:provider/provider.dart'; // Import Provider
 // Import Model & Provider Baru
 import '../../model/custom_models.dart';
 import '../../viewmodel/database_provider.dart';
-import 'dart:async'; // Diperlukan untuk Timer
+// Diperlukan untuk Timer
 import 'package:alp_depd/view/pages/user/eventDetailPage.dart';
 import '../pages/admin/registrationpage.dart';
-// Import Halaman untuk Navigasi (onTap card)
 
 part 'home_header.dart';
 part 'event_card.dart';
@@ -22,6 +21,6 @@ part 'navbar.dart';
 part 'event_header.dart';
 part 'featured_events_section.dart';
 part 'upComingEventCard.dart';
-part 'upComingEventSection.dart';
 part 'recentsEventSection.dart';
 part 'lastChanceEventSection.dart';
+part 'all_events_section.dart';

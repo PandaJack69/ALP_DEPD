@@ -1,7 +1,7 @@
 import 'package:alp_depd/view/pages/admin/event_register.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../viewmodel/database_provider.dart'; // Pakai Provider Baru
+import '../../../viewmodel/database_provider.dart'; 
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:alp_depd/view/widgets/footer_section.dart';
 
@@ -10,13 +10,13 @@ class Eventpage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Listen ke DatabaseProvider (Pengganti AuthViewModel)
+    // 1. Listen ke DatabaseProvider
     final dbProvider = context.watch<DatabaseProvider>();
     
     return Scaffold(
       backgroundColor: Colors.white,
       
-      // Tombol Add Event: Hanya muncul jika user login & role-nya organizer atau admin
+      // Tombol Add Event
       floatingActionButton: (dbProvider.isLoggedIn && 
           (dbProvider.currentUser?.role == 'organizer' || dbProvider.currentUser?.role == 'admin')) 
         ? FloatingActionButton.extended(
@@ -30,19 +30,28 @@ class Eventpage extends StatelessWidget {
             icon: const Icon(Icons.add, color: Colors.white),
             backgroundColor: const Color(0xFF3F054F),
           )
-        : null, // Hilang jika user biasa / belum login
+        : null,
         
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 2. Pass status login ke Header
+            // 1. HEADER (Dibiarkan di luar agar tetap Full Width)
             EventHeader(isLoggedIn: dbProvider.isLoggedIn),
 
-            // Section Event (Pastikan widget ini nanti mengambil data dari provider juga)
-            const RecentEventsSection(),
-            const LastChanceEventsSection(),
+            // 2. KONTEN TENGAH (Diberi Padding Horizontal)
+            Padding(
+              // Atur jarak kiri-kanan di sini (misal: 24 atau 30)
+              padding: const EdgeInsets.symmetric(horizontal: 120), 
+              child: Column(
+                children: [
+                  const RecentEventsSection(),
+                  const LastChanceEventsSection(),
+                  const AllEventsSection(),
+                ],
+              ),
+            ),
             
-            // Footer Section
+            // 3. FOOTER (Dibiarkan di luar agar tetap Full Width)
             const FooterSection(),
           ],
         ),

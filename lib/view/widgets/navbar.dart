@@ -47,24 +47,23 @@ class Navbar extends StatelessWidget {
     final bool isDesktop = width > 800;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 40),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xff123C52), Color(0xff3F054F)],
+         gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [Color(0xFF3F054F), Color(0xFF291F51), Color(0xFF103D52)],
         ),
       ),
       child: Row(
         children: [
-          const Text(
-            "The Event",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+          // --- BAGIAN YANG DIUBAH (LOGO) ---
+          Image.asset(
+            'assets/Image/Logo.png', // <-- PERBAIKAN: Tambah folder /Image/
+            height: 80,
           ),
+
+          // -------------------------------
           const Spacer(),
 
           if (isDesktop) ...[
@@ -93,7 +92,7 @@ class Navbar extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => const OrganizerDashboard(),
                     ),
-                  ); // Atau OrganizerDashboard
+                  );
                 } else if (value == 'admin') {
                   Navigator.push(
                     context,
@@ -119,7 +118,6 @@ class Navbar extends StatelessWidget {
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                 // --- LOGIKA PENGECEKAN ROLE ---
-               
                 if (user?.role == 'organizer')
                   const PopupMenuItem<String>(
                     value: 'organize',

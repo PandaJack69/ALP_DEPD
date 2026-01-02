@@ -54,7 +54,7 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
 
     // 1. CEK VALIDASI AKSES ROLE
     if (user != null) {
-      String userRole = user.role?.toLowerCase() ?? "";
+      String userRole = user.role.toLowerCase() ?? "";
       
       // Siswa tidak boleh ikut Event atau Pengmas
       if (userRole == "siswa" && (category == "event" || category == "pengmas")) {
@@ -295,7 +295,7 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
         const Text("Pilih Cabang Lomba", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
-          value: selectedSubEvent,
+          initialValue: selectedSubEvent,
           items: subEvents.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
           onChanged: (value) => setState(() => selectedSubEvent = value),
           validator: (v) => v == null ? "Wajib pilih cabang" : null,
@@ -312,7 +312,7 @@ class _RegistrationFormCardState extends State<RegistrationFormCard> {
         const Text("Pilih Divisi", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xffA0025B))),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
-          value: selectedDivision,
+          initialValue: selectedDivision,
           items: divisions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
           onChanged: (value) => setState(() => selectedDivision = value),
           validator: (v) => v == null ? "Wajib pilih divisi" : null,
