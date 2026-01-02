@@ -1,6 +1,7 @@
 import 'dart:async'; // Diperlukan untuk Timer
 import 'package:alp_depd/model/custom_models.dart';
 import 'package:alp_depd/view/pages/admin/registrationpage.dart';
+import 'package:alp_depd/view/widgets/custom_dialogs.dart';
 import 'package:alp_depd/view/widgets/pages.dart';
 import 'package:alp_depd/viewmodel/database_provider.dart';
 import 'package:flutter/material.dart';
@@ -221,6 +222,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
             _detailRow("Location", widget.event.location),
             _detailRow("Close Entry", DateFormat('dd MMM yyyy').format(widget.event.closeRegDate)),
             _detailRow("The Day", DateFormat('dd MMM yyyy').format(widget.event.eventDate)),
+            _detailRow("Sisa Kuota", "${widget.event.remainingQuota} seats"), // [BARU]
           ],
         ),
       ),
@@ -258,24 +260,55 @@ class _EventDetailPageState extends State<EventDetailPage> {
     ),
   );
 
-  Widget _buildApplyButton(bool isLoggedIn) => SizedBox(
-    width: double.infinity,
-    child: ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        backgroundColor: const Color(0xff3F054F),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-      ),
-      onPressed: () {
-        if (isLoggedIn) {
+ Widget _buildApplyButton(bool isLoggedIn) {
+    final bool isClosed = DateTime.now().isAfter(widget.event.closeRegDate);
+    final bool isFull = widget.event.remainingQuota <= 0; // [BARU] Cek Penuh
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          // Abu-abu jika tutup/penuh
+          backgroundColor: (isClosed || isFull) ? Colors.grey : const Color(0xff3F054F),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+        ),
+        onPressed: () async {
+          // 1. Cek Closed & Full
+          if (isClosed) { /* ... show error ... */ return; }
+          if (isFull) { // [BARU]
+             await showErrorDialog(context, title: "Kuota Penuh", message: "Maaf, kuota peserta sudah habis.");
+             return;
+          }
+
+          if (!isLoggedIn) { /* ... show login dialog ... */ return; }
+
+          // 2. Cek Tabrakan Jadwal (Warning) [BARU]
+          final provider = context.read<DatabaseProvider>();
+          bool isConflict = await provider.checkTimeConflict(widget.event.eventDate);
+
+          if (isConflict) {
+            await showErrorDialog(
+              context, 
+              title: "Jadwal Bentrok!", 
+              message: "Kamu sudah terdaftar di event lain pada tanggal yang sama. Tidak bisa join."
+            );
+            return; // Blokir akses
+          }
+
+          // 3. Lanjut Daftar
           Navigator.push(context, MaterialPageRoute(builder: (_) => RegistrationPage(event: widget.event)));
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please Login to Apply!"), backgroundColor: Colors.red));
-        }
-      },
-      child: const Text("Apply Now !", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-    ),
-  );
+        },
+        child: Text(
+          isClosed ? "Registration Closed" : (isFull ? "Quota Full" : "Apply Now !"), 
+          style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)
+        ),
+      ),
+    );
+  }
+  
+
+  
 
   Widget _buildNotifyInput() => SizedBox(
     width: 620,

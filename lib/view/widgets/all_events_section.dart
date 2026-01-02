@@ -8,10 +8,12 @@ class AllEventsSection extends StatelessWidget {
     // 1. Ambil data dari Provider
     final dbProvider = context.watch<DatabaseProvider>();
 
-    // 2. Tentukan data mana yang dipakai (Search Result atau Semua Data)
-    final List<EventModel> displayEvents = dbProvider.searchQuery.isNotEmpty
-        ? dbProvider.filteredEvents
-        : dbProvider.events;
+    // 2. Ambil data events (Provider sudah menangani sorting kuota & filtering)
+    final List<EventModel> displayEvents = dbProvider.events;
+
+    // 3. Ambil data untuk Filter Chips
+    final List<String> divisions = dbProvider.getAvailableDivisions();
+    final String selectedFilter = dbProvider.selectedDivisionFilter;
 
     return Container(
       width: double.infinity,
@@ -30,7 +32,7 @@ class AllEventsSection extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(), // Atur jarak kiri-kanan di sini
+            padding: const EdgeInsets.symmetric(), 
             child: Container(
               width: 120,
               height: 4,
@@ -54,16 +56,57 @@ class AllEventsSection extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
+          // --- [BARU] FITUR FILTER DIVISI (CHIPS) ---
+          if (divisions.isNotEmpty) ...[
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: divisions.map((div) {
+                  final isSelected = div == selectedFilter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: ChoiceChip(
+                      label: Text(div),
+                      selected: isSelected,
+                      onSelected: (bool selected) {
+                        // Jika di-klik, set filter. Jika di-unselect, set ke "All"
+                        context.read<DatabaseProvider>().setDivisionFilter(
+                          selected ? div : "All"
+                        );
+                      },
+                      // Styling Chip
+                      selectedColor: const Color(0xFF3F054F),
+                      backgroundColor: Colors.grey[200],
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
           // --- LOGIKA ISI KONTEN ---
           if (displayEvents.isEmpty)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                "Tidak ada event saat ini.",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Text(
+                  "Tidak ada event yang sesuai filter.",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
             )
@@ -75,16 +118,13 @@ class AllEventsSection extends StatelessWidget {
                 maxCrossAxisExtent: 350,
                 mainAxisSpacing: 20,
                 crossAxisSpacing: 20,
-                childAspectRatio: 0.75, // Sedikit disesuaikan agar EventCard proporsional
+                childAspectRatio: 0.75, 
               ),
               itemCount: displayEvents.length,
               itemBuilder: (context, index) {
                 final event = displayEvents[index];
                 
-                // MENGGUNAKAN EVENT CARD
-                // Tag "Open Now" hanya muncul jika tanggal pendaftaran sedang berlangsung.
-                // Jika belum mulai, EventCard otomatis ubah jadi "Coming Soon".
-                // Jika sudah lewat, EventCard otomatis ubah jadi "Closed".
+                // EventCard otomatis menampilkan data yang sudah difilter & disortir
                 return EventCard(
                   event: event,
                   tag: "Open Now", 

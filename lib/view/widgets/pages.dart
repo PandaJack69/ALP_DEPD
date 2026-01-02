@@ -5,8 +5,10 @@ import 'package:alp_depd/view/pages/user/eventpage.dart';
 import 'package:alp_depd/view/pages/user/homepage.dart';
 import 'package:alp_depd/view/pages/user/profilepage.dart';
 import 'package:alp_depd/view/widgets/custom_dialogs.dart';
+import 'package:alp_depd/view/widgets/event_card.dart';
 import 'package:flutter/material.dart';
 import 'package:gradient_borders/gradient_borders.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart'; // Import Provider
 
 // Import Model & Provider Baru
@@ -17,7 +19,6 @@ import 'package:alp_depd/view/pages/user/eventDetailPage.dart';
 import '../pages/admin/registrationpage.dart';
 
 part 'home_header.dart';
-part 'event_card.dart';
 part 'navbar.dart';
 part 'event_header.dart';
 part 'featured_events_section.dart';

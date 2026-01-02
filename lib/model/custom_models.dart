@@ -7,7 +7,7 @@ class UserProfile {
   final String? avatarUrl;
   final String? cvUrl;
   final String? portfolioUrl;
-  
+
   // --- Data Tambahan ---
   final String? major;
   final String? batch;
@@ -39,12 +39,12 @@ class UserProfile {
       avatarUrl: json['avatar_url'],
       cvUrl: json['cv_url'],
       portfolioUrl: json['portfolio_url'],
-      
+
       // Mapping ke Nama Kolom Database yang BENAR
       major: json['major'],
-      batch: json['batch_year'],     // Sesuai DB: batch_year
-      phone: json['phone_number'],   // Sesuai DB: phone_number
-      lineId: json['line_id'],       // Sesuai DB: line_id
+      batch: json['batch_year'], // Sesuai DB: batch_year
+      phone: json['phone_number'], // Sesuai DB: phone_number
+      lineId: json['line_id'], // Sesuai DB: line_id
     );
   }
 
@@ -75,36 +75,38 @@ class UserProfile {
       lineId: lineId ?? this.lineId,
     );
   }
-}    
+}
 
 class EventModel {
   final String id;
-  final String name;          
-  final String description;   
-  final String organization;  
-  final String category;      
-  final String posterUrl;     
-  
-  final DateTime eventDate;    
-  final DateTime openRegDate;  
-  final DateTime closeRegDate; 
-  
+  final String name;
+  final String description;
+  final String organization;
+  final String category;
+  final String posterUrl;
+
+  final DateTime eventDate;
+  final DateTime openRegDate;
+  final DateTime closeRegDate;
+
   // --- Field Baru ---
-  final DateTime? tmDate;      // Khusus Lomba
-  final DateTime? prelimDate;  // Khusus Lomba
-  final String terms;          // S&K
-  final String waGroupLink;    // Link Group WA (Event)
-  final String bankAccount;    // No Rekening (Lomba)
-  final List<String> subEvents;// Jenis Lomba (Lomba)
-  
+  final DateTime? tmDate; // Khusus Lomba
+  final DateTime? prelimDate; // Khusus Lomba
+  final String terms; // S&K
+  final String waGroupLink; // Link Group WA (Event)
+  final String bankAccount; // No Rekening (Lomba)
+  final List<String> subEvents; // Jenis Lomba (Lomba)
+
   // Data Lama
-  final List<String> benefits; 
+  final List<String> benefits;
   final List<String> divisions; // Divisi (Event/Pengmas)
-  final String whatsapp;       
-  final String instagram;      
-  final String lineId;         
-  final String location;       
-  final String fee;            
+  final String whatsapp;
+  final String instagram;
+  final String lineId;
+  final String location;
+  final String fee;
+  final int maxParticipants;
+  final int currentParticipants;
 
   EventModel({
     required this.id,
@@ -129,8 +131,10 @@ class EventModel {
     this.lineId = '-',
     this.location = '-',
     this.fee = '-',
+    this.maxParticipants = 0,
+    this.currentParticipants = 0,
   });
-
+  int get remainingQuota => maxParticipants - currentParticipants;
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
       id: json['id'],
@@ -139,29 +143,42 @@ class EventModel {
       organization: json['organization_name'] ?? 'Organizer',
       category: json['category'] ?? 'event',
       posterUrl: json['poster_url'] ?? 'https://via.placeholder.com/400x600',
-      
-      eventDate: json['event_date'] != null ? DateTime.parse(json['event_date']) : DateTime.now(),
-      openRegDate: json['start_reg_date'] != null ? DateTime.parse(json['start_reg_date']) : DateTime.now(),
-      closeRegDate: json['end_reg_date'] != null ? DateTime.parse(json['end_reg_date']) : DateTime.now(),
-      
+
+      eventDate: json['event_date'] != null
+          ? DateTime.parse(json['event_date'])
+          : DateTime.now(),
+      openRegDate: json['start_reg_date'] != null
+          ? DateTime.parse(json['start_reg_date'])
+          : DateTime.now(),
+      closeRegDate: json['end_reg_date'] != null
+          ? DateTime.parse(json['end_reg_date'])
+          : DateTime.now(),
+
       // --- Mapping Field Baru ---
       tmDate: json['tm_date'] != null ? DateTime.parse(json['tm_date']) : null,
-      prelimDate: json['prelim_date'] != null ? DateTime.parse(json['prelim_date']) : null,
+      prelimDate: json['prelim_date'] != null
+          ? DateTime.parse(json['prelim_date'])
+          : null,
       terms: json['terms_and_conditions'] ?? '-',
       waGroupLink: json['whatsapp_group_link'] ?? '-',
       bankAccount: json['bank_account_info'] ?? '-',
-      subEvents: json['sub_events'] != null ? List<String>.from(json['sub_events']) : [],
+      subEvents: json['sub_events'] != null
+          ? List<String>.from(json['sub_events'])
+          : [],
 
       // Mapping Lama
-      divisions: json['divisions'] != null ? List<String>.from(json['divisions']) : [],
-      benefits: [], 
-      whatsapp: json['contact_whatsapp']?.toString() ?? '-', 
-      lineId: json['contact_line']?.toString() ?? '-',       
-      
+      divisions: json['divisions'] != null
+          ? List<String>.from(json['divisions'])
+          : [],
+      benefits: [],
+      whatsapp: json['contact_whatsapp']?.toString() ?? '-',
+      lineId: json['contact_line']?.toString() ?? '-',
+
       location: json['location']?.toString() ?? '-',
       // This specifically fixes the "int is not subtype of String" error for fees
-      fee: json['registration_fee']?.toString() ?? 'Free', 
-
+      fee: json['registration_fee']?.toString() ?? 'Free',
+      maxParticipants: json['max_participants'] ?? 0,
+      currentParticipants: json['current_participants'] ?? 0,
     );
   }
 }
