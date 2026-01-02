@@ -1,7 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodel/database_provider.dart'; // Pastikan path import ini benar
 
-class FooterSection extends StatelessWidget {
+class FooterSection extends StatefulWidget {
   const FooterSection({super.key});
+
+  @override
+  State<FooterSection> createState() => _FooterSectionState();
+}
+
+class _FooterSectionState extends State<FooterSection> {
+  final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk menangani proses subscribe
+  Future<void> _handleSubscribe() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email tidak boleh kosong"), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Panggil fungsi dari Provider
+    final provider = context.read<DatabaseProvider>();
+    String? error = await provider.subscribeNewsletter(email);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      if (error == null) {
+        // SUKSES
+        _emailController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Berhasil berlangganan! Terima kasih."),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // GAGAL
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +113,7 @@ class FooterSection extends StatelessWidget {
             ),
           ),
 
-          // Column 3: Subscribe
+          // Column 3: Subscribe (YANG SUDAH DIUPDATE)
           SizedBox(
             width: 300,
             child: Column(
@@ -77,13 +131,28 @@ class FooterSection extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const TextField(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 5, 0), // Padding disesuaikan untuk tombol
+                  child: TextField(
+                    controller: _emailController,
                     decoration: InputDecoration(
                       hintText: "Email",
-                      hintStyle: TextStyle(fontSize: 12),
+                      hintStyle: const TextStyle(fontSize: 12),
                       border: InputBorder.none,
-                      suffixIcon: Icon(Icons.mail_outline, size: 18),
+                      // Tombol Kirim ada di sini
+                      suffixIcon: _isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(10.0),
+                              child: SizedBox(
+                                width: 10, 
+                                height: 10, 
+                                child: CircularProgressIndicator(strokeWidth: 2)
+                              ),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.send, size: 20, color: Color(0xFF1E1135)),
+                              onPressed: _handleSubscribe, // Panggil fungsi saat diklik
+                              tooltip: "Subscribe",
+                            ),
                     ),
                   ),
                 )

@@ -41,9 +41,26 @@ class DatabaseProvider extends ChangeNotifier {
   // ================== AUTH SECTION ==================
 
   Future<void> loadUser() async {
-    final user = _supabase.auth.currentUser;
-    if (user != null) {
-      await _fetchProfile(user.id);
+    // Mulai loading agar UI tahu sedang mengambil data awal
+    _setLoading(true); 
+
+    try {
+      // 1. AMBIL DATA EVENT (Wajib untuk semua, baik Guest maupun User)
+      await fetchAllEvents(); 
+
+      // 2. CEK SESI LOGIN
+      final user = _supabase.auth.currentUser;
+      
+      if (user != null) {
+        // Jika User Login: Ambil Profile & Event Pribadi (Organizer)
+        await _fetchProfile(user.id);
+      } else {
+        // Jika Guest: Stop loading (karena fetchAllEvents sudah selesai)
+        _setLoading(false);
+      }
+    } catch (e) {
+      print("Error loading initial data: $e");
+      _setLoading(false);
     }
   }
   
@@ -627,4 +644,24 @@ class DatabaseProvider extends ChangeNotifier {
     _isLoading = val;
     notifyListeners();
   }
+  Future<String?> subscribeNewsletter(String email) async {
+    try {
+      // Validasi sederhana
+      if (!email.contains('@') || !email.contains('.')) {
+        return "Format email tidak valid";
+      }
+
+      await _supabase.from('subscribers').insert({
+        'email': email,
+      });
+      return null; // Berhasil
+    } catch (e) {
+      // Cek jika error karena duplikat (email sudah ada)
+      if (e.toString().contains('duplicate key')) {
+        return "Email ini sudah berlangganan.";
+      }
+      return "Gagal berlangganan: $e";
+    }
+  }
+
 }

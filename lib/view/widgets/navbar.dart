@@ -88,7 +88,7 @@ class Navbar extends StatelessWidget {
     final bool isDesktop = width > 800;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topRight,
@@ -100,7 +100,7 @@ class Navbar extends StatelessWidget {
         children: [
           Image.asset(
             'assets/Image/Logo.png',
-            height: 80,
+            height: 50,
           ),
           const Spacer(),
 
