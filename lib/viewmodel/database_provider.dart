@@ -20,16 +20,17 @@ class DatabaseProvider extends ChangeNotifier {
   bool _isLoading = false;
 
   // --- BAGIAN INI YANG PERLU DIPERBAIKI ---
-  
+
   List<EventModel> _filteredEvents = [];
   String _searchQuery = "";
 
   // 1. TAMBAHKAN GETTER INI (Supaya error merah hilang)
-  String get searchQuery => _searchQuery; 
+  String get searchQuery => _searchQuery;
   List<EventModel> get filteredEvents => _filteredEvents;
 
   // Getter events yang sudah ada (tetap biarkan)
-  List<EventModel> get events => _searchQuery.isEmpty ? _events : _filteredEvents;
+  List<EventModel> get events =>
+      _searchQuery.isEmpty ? _events : _filteredEvents;
 
   // Getter lainnya (tetap biarkan)
   UserProfile? get currentUser => _currentUser;
@@ -41,15 +42,32 @@ class DatabaseProvider extends ChangeNotifier {
   // ================== AUTH SECTION ==================
 
   Future<void> loadUser() async {
-    final user = _supabase.auth.currentUser;
-    if (user != null) {
-      await _fetchProfile(user.id);
+    // Mulai loading agar UI tahu sedang mengambil data awal
+    _setLoading(true);
+
+    try {
+      // 1. AMBIL DATA EVENT (Wajib untuk semua, baik Guest maupun User)
+      await fetchAllEvents();
+
+      // 2. CEK SESI LOGIN
+      final user = _supabase.auth.currentUser;
+
+      if (user != null) {
+        // Jika User Login: Ambil Profile & Event Pribadi (Organizer)
+        await _fetchProfile(user.id);
+      } else {
+        // Jika Guest: Stop loading (karena fetchAllEvents sudah selesai)
+        _setLoading(false);
+      }
+    } catch (e) {
+      print("Error loading initial data: $e");
+      _setLoading(false);
     }
   }
-  
+
   void searchEvents(String query) {
     _searchQuery = query.toLowerCase();
-    
+
     if (_searchQuery.isEmpty) {
       // Jika search bar dikosongkan, reset hasil filter
       _filteredEvents = [];
@@ -61,9 +79,9 @@ class DatabaseProvider extends ChangeNotifier {
         return name.contains(_searchQuery) || category.contains(_searchQuery);
       }).toList();
     }
-    
+
     // Beritahu UI untuk update tampilan
-    notifyListeners(); 
+    notifyListeners();
   }
 
   Future<String?> login(String email, String password) async {
@@ -389,7 +407,7 @@ class DatabaseProvider extends ChangeNotifier {
         'title': title,
         'category': category.toLowerCase(),
         'description': description,
-        'organization_name': _currentUser!.institution ?? "Organizer",
+        'organization_name': _currentUser!.fullName,
         'start_reg_date': startReg?.toIso8601String(),
         'end_reg_date': endReg?.toIso8601String(),
         'event_date': eventDate?.toIso8601String(),
@@ -626,5 +644,23 @@ class DatabaseProvider extends ChangeNotifier {
   void _setLoading(bool val) {
     _isLoading = val;
     notifyListeners();
+  }
+
+  Future<String?> subscribeNewsletter(String email) async {
+    try {
+      // Validasi sederhana
+      if (!email.contains('@') || !email.contains('.')) {
+        return "Format email tidak valid";
+      }
+
+      await _supabase.from('subscribers').insert({'email': email});
+      return null; // Berhasil
+    } catch (e) {
+      // Cek jika error karena duplikat (email sudah ada)
+      if (e.toString().contains('duplicate key')) {
+        return "Email ini sudah berlangganan.";
+      }
+      return "Gagal berlangganan: $e";
+    }
   }
 }
