@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodel/database_provider.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
   @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+  final _institutionCtrl = TextEditingController();
+  
+  // Default role
+  String _selectedRole = 'mahasiswa';
+
+  @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DatabaseProvider>();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -13,153 +31,100 @@ class RegisterPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo/Title
-              const Text(
-                "The Event",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3F054F),
-                ),
-              ),
+              const Text("The Event", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF3F054F))),
               const SizedBox(height: 8),
-              const Text(
-                "Create your account",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 40),
+              const Text("Create your account", style: TextStyle(fontSize: 18, color: Colors.grey)),
+              const SizedBox(height: 30),
 
-              // Registration Form
               Container(
                 constraints: const BoxConstraints(maxWidth: 400),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    ),
-                  ],
+                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 20, spreadRadius: 2)],
                   border: Border.all(color: Colors.grey.shade200),
                 ),
                 child: Column(
                   children: [
-                    // Full Name
                     TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: "Full Name",
-                        prefixIcon: Icon(Icons.person),
-                        border: OutlineInputBorder(),
-                      ),
+                      controller: _nameCtrl,
+                      decoration: const InputDecoration(labelText: "Full Name", prefixIcon: Icon(Icons.person), border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 16),
-
-                    // Email
                     TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _emailCtrl,
+                      decoration: const InputDecoration(labelText: "Email", prefixIcon: Icon(Icons.email), border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 16),
-
-                    // Password
                     TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: "Password",
-                        prefixIcon: Icon(Icons.lock),
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.visibility_off),
-                      ),
+                      controller: _institutionCtrl,
+                      decoration: const InputDecoration(labelText: "School / University", prefixIcon: Icon(Icons.school), border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    // Dropdown Role
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedRole,
+                      decoration: const InputDecoration(labelText: "Register As", prefixIcon: Icon(Icons.badge), border: OutlineInputBorder()),
+                      items: ['mahasiswa', 'siswa'].map((role) {
+                        return DropdownMenuItem(value: role, child: Text(role.toUpperCase()));
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedRole = val!),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passCtrl,
                       obscureText: true,
+                      decoration: const InputDecoration(labelText: "Password", prefixIcon: Icon(Icons.lock), border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 16),
-
-                    // Confirm Password
                     TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: "Confirm Password",
-                        prefixIcon: Icon(Icons.lock),
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.visibility_off),
-                      ),
+                      controller: _confirmPassCtrl,
                       obscureText: true,
+                      decoration: const InputDecoration(labelText: "Confirm Password", prefixIcon: Icon(Icons.lock), border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 24),
 
-                    // Register Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Handle registration logic
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Registration successful!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                          Navigator.pop(context); // Go back to home
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3F054F),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    if (provider.isLoading)
+                      const CircularProgressIndicator()
+                    else
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (_passCtrl.text != _confirmPassCtrl.text) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password tidak sama!")));
+                              return;
+                            }
+                            // Panggil Provider Register
+                            String? error = await provider.register(
+                              _emailCtrl.text.trim(), // <--- SUDAH DITAMBAHKAN TRIM
+                              _passCtrl.text, 
+                              _nameCtrl.text, 
+                              _selectedRole,
+                              _institutionCtrl.text
+                            );
+
+                            if (error == null && mounted) {
+                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registration successful!'), backgroundColor: Colors.green));
+                               Navigator.pop(context); // Balik ke Login
+                            } else if (mounted) {
+                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error ?? "Error"), backgroundColor: Colors.red));
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3F054F),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                        ),
-                        child: const Text(
-                          "Create Account",
-                          style: TextStyle(fontSize: 16),
+                          child: const Text("Create Account"),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 16),
-
-                    // Already have an account
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Already have an account?"),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Go back to login/home
-                          },
-                          child: const Text(
-                            "Sign In",
-                            style: TextStyle(
-                              color: Color(0xFF3F054F),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Already have an account? Sign In", style: TextStyle(color: Color(0xFF3F054F))),
                     ),
-                  ],
-                ),
-              ),
-
-              // Back to Home Button
-              const SizedBox(height: 30),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.arrow_back, size: 16),
-                    SizedBox(width: 8),
-                    Text("Back to Home"),
                   ],
                 ),
               ),
