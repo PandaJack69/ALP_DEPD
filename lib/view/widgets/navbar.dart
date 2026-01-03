@@ -51,16 +51,7 @@ class Navbar extends StatelessWidget {
     return Container(
       // --- PENERAPAN GRADASI ---
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xff123C52),
-            Color(0xff3F054F),
-          ],
-        ),
-      ),
+      color: Colors.transparent, // <-- transparan
       child: Row(
         children: [
           const Text(

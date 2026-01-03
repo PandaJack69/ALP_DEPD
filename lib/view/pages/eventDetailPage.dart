@@ -21,7 +21,7 @@ class EventDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final authVM = context.watch<AuthViewModel>();
     final df = DateFormat('dd MMM yyyy');
-    final diff = event.eventDate.difference(DateTime.now());
+    final diff = event.closeRegDate.difference(DateTime.now());
 
     return Scaffold(
       backgroundColor: Colors.white,
