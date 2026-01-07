@@ -3,6 +3,7 @@ import 'package:alp_depd/view/pages/admin/organizerdashboard.dart';
 import 'package:alp_depd/view/pages/loginpage.dart';
 import 'package:alp_depd/view/pages/user/eventpage.dart';
 import 'package:alp_depd/view/pages/user/homepage.dart';
+import 'package:alp_depd/view/pages/user/my_registrations_page.dart';
 import 'package:alp_depd/view/pages/user/profilepage.dart';
 import 'package:alp_depd/view/widgets/custom_dialogs.dart';
 import 'package:alp_depd/view/widgets/event_card.dart';

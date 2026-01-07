@@ -10,8 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:alp_depd/view/widgets/footer_section.dart';
 
-const Color titleColor = Color(0xFF0F2A44); 
-const Color subColor   = Color(0xFF334155); 
+const Color titleColor = Color(0xFF0F2A44);
+const Color subColor = Color(0xFF334155);
 
 class EventDetailPage extends StatefulWidget {
   final EventModel event;
@@ -54,7 +54,9 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = context.select<DatabaseProvider, bool>((p) => p.isLoggedIn);
+    final isLoggedIn = context.select<DatabaseProvider, bool>(
+      (p) => p.isLoggedIn,
+    );
     final isExpired = _diff.isNegative;
 
     final isLomba = widget.event.category.toLowerCase() == 'lomba';
@@ -72,7 +74,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
               child: Image.network(
                 widget.event.posterUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[200]),
+                errorBuilder: (ctx, err, stack) =>
+                    Container(color: Colors.grey[200]),
               ),
             ),
             Container(
@@ -100,7 +103,11 @@ class _EventDetailPageState extends State<EventDetailPage> {
                           child: Text(
                             widget.event.name,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w900, color: titleColor),
+                            style: const TextStyle(
+                              fontSize: 56,
+                              fontWeight: FontWeight.w900,
+                              color: titleColor,
+                            ),
                           ),
                         ),
 
@@ -110,7 +117,12 @@ class _EventDetailPageState extends State<EventDetailPage> {
                         if (!isExpired) ...[
                           const Text(
                             "Started in",
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: subColor, letterSpacing: 1.2),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: subColor,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                           const SizedBox(height: 15),
                           Row(
@@ -128,7 +140,11 @@ class _EventDetailPageState extends State<EventDetailPage> {
                         ] else
                           const Text(
                             "EVENT ENDED",
-                            style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.red),
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
                           ),
 
                         const SizedBox(height: 60),
@@ -140,7 +156,10 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
                 // ================= CONTENT DETAIL =================
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 150, vertical: 100),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 150,
+                    vertical: 100,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -153,10 +172,25 @@ class _EventDetailPageState extends State<EventDetailPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.event.name, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: titleColor)),
+                            Text(
+                              widget.event.name,
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: titleColor,
+                              ),
+                            ),
                             const SizedBox(height: 10),
-                            Text(widget.event.description, style: const TextStyle(fontSize: 15, color: subColor, height: 1.6, fontWeight: FontWeight.w500)),
-                            
+                            Text(
+                              widget.event.description,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: subColor,
+                                height: 1.6,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+
                             const SizedBox(height: 40),
 
                             _buildInfoGrid(isLomba, isEvent),
@@ -183,13 +217,30 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   Widget _spacer() => const Padding(
     padding: EdgeInsets.symmetric(horizontal: 20),
-    child: Text(":", style: TextStyle(fontSize: 50, fontWeight: FontWeight.bold, color: titleColor)),
+    child: Text(
+      ":",
+      style: TextStyle(
+        fontSize: 50,
+        fontWeight: FontWeight.bold,
+        color: titleColor,
+      ),
+    ),
   );
 
   Widget _count(int v, String l) => Column(
     children: [
-      Text(v.toString().padLeft(2, '0'), style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold, color: titleColor)),
-      Text(l, style: const TextStyle(color: subColor, fontWeight: FontWeight.w600)),
+      Text(
+        v.toString().padLeft(2, '0'),
+        style: const TextStyle(
+          fontSize: 50,
+          fontWeight: FontWeight.bold,
+          color: titleColor,
+        ),
+      ),
+      Text(
+        l,
+        style: const TextStyle(color: subColor, fontWeight: FontWeight.w600),
+      ),
     ],
   );
 
@@ -201,12 +252,23 @@ class _EventDetailPageState extends State<EventDetailPage> {
       borderRadius: BorderRadius.circular(30),
       border: Border.all(color: const Color(0xff3F054F)),
     ),
-    child: Text(widget.event.category.toUpperCase(), style: const TextStyle(color: Color(0xff3F054F), fontWeight: FontWeight.bold)),
+    child: Text(
+      widget.event.category.toUpperCase(),
+      style: const TextStyle(
+        color: Color(0xff3F054F),
+        fontWeight: FontWeight.bold,
+      ),
+    ),
   );
 
   Widget _buildPoster() => ClipRRect(
     borderRadius: BorderRadius.circular(24),
-    child: Image.network(widget.event.posterUrl, width: 380, height: 620, fit: BoxFit.cover),
+    child: Image.network(
+      widget.event.posterUrl,
+      width: 380,
+      height: 620,
+      fit: BoxFit.cover,
+    ),
   );
 
   Widget _buildInfoGrid(bool isLomba, bool isEvent) => Row(
@@ -216,13 +278,31 @@ class _EventDetailPageState extends State<EventDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Event Detail", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: titleColor)),
+            const Text(
+              "Event Detail",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: titleColor,
+              ),
+            ),
             const SizedBox(height: 16),
             _detailRow("Organization", widget.event.organization),
+            _detailRow("Whatsapp Number", widget.event.whatsapp),
+            _detailRow("ID line", widget.event.lineId),
             _detailRow("Location", widget.event.location),
-            _detailRow("Close Entry", DateFormat('dd MMM yyyy').format(widget.event.closeRegDate)),
-            _detailRow("The Day", DateFormat('dd MMM yyyy').format(widget.event.eventDate)),
-            _detailRow("Sisa Kuota", "${widget.event.remainingQuota} seats"), // [BARU]
+            _detailRow(
+              "Close Entry",
+              DateFormat('dd MMM yyyy').format(widget.event.closeRegDate),
+            ),
+            _detailRow(
+              "The Day",
+              DateFormat('dd MMM yyyy').format(widget.event.eventDate),
+            ),
+            _detailRow(
+              "Sisa Kuota",
+              "${widget.event.remainingQuota} seats",
+            ), // [BARU]
           ],
         ),
       ),
@@ -230,18 +310,41 @@ class _EventDetailPageState extends State<EventDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(isLomba ? "Competition Branches" : "Open Divisions", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: titleColor)),
+            Text(
+              isLomba ? "Competition Branches" : "Open Divisions",
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: titleColor,
+              ),
+            ),
             const SizedBox(height: 16),
-            Builder(builder: (context) {
-              final list = isLomba ? widget.event.subEvents : widget.event.divisions;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: list.asMap().entries.map((e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text("${e.key + 1}. ${e.value}", style: const TextStyle(color: subColor, fontWeight: FontWeight.bold)),
-                )).toList(),
-              );
-            }),
+            Builder(
+              builder: (context) {
+                final list = isLomba
+                    ? widget.event.subEvents
+                    : widget.event.divisions;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: list
+                      .asMap()
+                      .entries
+                      .map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            "${e.key + 1}. ${e.value}",
+                            style: const TextStyle(
+                              color: subColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -253,14 +356,25 @@ class _EventDetailPageState extends State<EventDetailPage> {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 120, child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: subColor))),
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: subColor,
+            ),
+          ),
+        ),
         const Text(": "),
-        Expanded(child: Text(value, style: const TextStyle(color: subColor))),
+        Expanded(
+          child: Text(value, style: const TextStyle(color: subColor)),
+        ),
       ],
     ),
   );
 
- Widget _buildApplyButton(bool isLoggedIn) {
+  Widget _buildApplyButton(bool isLoggedIn) {
     final bool isClosed = DateTime.now().isAfter(widget.event.closeRegDate);
     final bool isFull = widget.event.remainingQuota <= 0; // [BARU] Cek Penuh
 
@@ -270,45 +384,71 @@ class _EventDetailPageState extends State<EventDetailPage> {
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 20),
           // Abu-abu jika tutup/penuh
-          backgroundColor: (isClosed || isFull) ? Colors.grey : const Color(0xff3F054F),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+          backgroundColor: (isClosed || isFull)
+              ? Colors.grey
+              : const Color(0xff3F054F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(40),
+          ),
         ),
         onPressed: () async {
           // 1. Cek Closed & Full
-          if (isClosed) { /* ... show error ... */ return; }
-          if (isFull) { // [BARU]
-             await showErrorDialog(context, title: "Kuota Penuh", message: "Maaf, kuota peserta sudah habis.");
-             return;
+          if (isClosed) { return; }
+          if (isFull) {
+            await showErrorDialog(
+              context,
+              title: "Kuota Penuh",
+              message: "Maaf, kuota peserta sudah habis.",
+            );
+            return;
           }
 
-          if (!isLoggedIn) { /* ... show login dialog ... */ return; }
+          if (!isLoggedIn) {
+            /* ... show login dialog ... */
+             // Tambahkan logika navigasi ke login jika perlu
+            return;
+          }
 
-          // 2. Cek Tabrakan Jadwal (Warning) [BARU]
+          // 2. Cek Tabrakan Jadwal (LOGIKA BARU)
           final provider = context.read<DatabaseProvider>();
-          bool isConflict = await provider.checkTimeConflict(widget.event.eventDate);
+          
+          // Fungsi ini sekarang mengembalikan Nama Event (String?)
+          String? conflictingEventName = await provider.checkTimeConflict(
+            widget.event.eventDate,
+          );
 
-          if (isConflict) {
+          // Jika ada nama event yang kembali, berarti BENTROK
+          if (conflictingEventName != null) {
             await showErrorDialog(
-              context, 
-              title: "Jadwal Bentrok!", 
-              message: "Kamu sudah terdaftar di event lain pada tanggal yang sama. Tidak bisa join."
+              context,
+              title: "Jadwal Bentrok!",
+              // PESAN KHUSUS SESUAI REQUEST
+              message: "Kamu telah terdaftar di \"$conflictingEventName\".",
             );
             return; // Blokir akses
           }
 
-          // 3. Lanjut Daftar
-          Navigator.push(context, MaterialPageRoute(builder: (_) => RegistrationPage(event: widget.event)));
+          // 3. Lanjut Daftar (Jika tidak ada konflik)
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RegistrationPage(event: widget.event),
+            ),
+          );
         },
         child: Text(
-          isClosed ? "Registration Closed" : (isFull ? "Quota Full" : "Apply Now !"), 
-          style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)
+          isClosed
+              ? "Registration Closed"
+              : (isFull ? "Quota Full" : "Apply Now !"),
+          style: const TextStyle(
+            fontSize: 18,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
-  
-
-  
 
   Widget _buildNotifyInput() => SizedBox(
     width: 620,
@@ -318,16 +458,23 @@ class _EventDetailPageState extends State<EventDetailPage> {
           child: TextField(
             decoration: InputDecoration(
               hintText: "Enter your email",
-              filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(32)),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(32),
+              ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
             ),
           ),
         ),
         const SizedBox(width: 18),
         ElevatedButton(
-          onPressed: () {}, 
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff3F054F), padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20), shape: const StadiumBorder()), 
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xff3F054F),
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            shape: const StadiumBorder(),
+          ),
           child: const Text("Notify", style: TextStyle(color: Colors.white)),
         ),
       ],
