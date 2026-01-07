@@ -26,3 +26,4 @@ part 'upComingEventCard.dart';
 part 'recentsEventSection.dart';
 part 'lastChanceEventSection.dart';
 part 'all_events_section.dart';
+
