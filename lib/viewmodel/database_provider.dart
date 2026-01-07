@@ -74,38 +74,47 @@ class DatabaseProvider extends ChangeNotifier {
   String _selectedDivisionFilter = "All";
   String get selectedDivisionFilter => _selectedDivisionFilter;
   
-  Future<bool> checkTimeConflict(DateTime newEventDate) async {
-    if (_currentUser == null) return false;
+  Future<String?> checkTimeConflict(DateTime newEventDate) async {
+    if (_currentUser == null) return null;
 
     try {
-      // Ambil semua event yang SUDAH diikuti user
+      // Ambil status pendaftaran DAN judul event
       final response = await _supabase
           .from('registrations')
-          .select('event_id, events(event_date)') 
+          .select('status, events(title, event_date)') 
           .eq('user_id', _currentUser!.id);
 
       final joinedEvents = List<Map<String, dynamic>>.from(response);
 
       for (var reg in joinedEvents) {
-        // Handle null safety jika events null (misal event dihapus)
         if (reg['events'] == null) continue;
         
+        // Ambil status, default ke pending jika null
+        final status = reg['status']?.toString().toLowerCase() ?? 'pending';
+
+        // LOGIKA KUNCI:
+        // Jika statusnya 'rejected', anggap TIDAK ADA konflik (User bebas daftar lagi)
+        if (status == 'rejected') continue;
+
+        // Jika status 'accepted' atau 'pending', cek tanggalnya
         final eventData = reg['events'] as Map<String, dynamic>;
         if (eventData['event_date'] != null) {
           DateTime joinedDate = DateTime.parse(eventData['event_date']);
           
-          // Cek apakah tanggal SAMA PERSIS (Tahun, Bulan, Hari)
+          // Cek kesamaan Tanggal (Tahun, Bulan, Hari)
           if (joinedDate.year == newEventDate.year && 
               joinedDate.month == newEventDate.month && 
               joinedDate.day == newEventDate.day) {
-            return true; // TABRAKAN!
+            
+            // Return NAMA EVENT yang bentrok
+            return eventData['title']?.toString() ?? "Event Lain"; 
           }
         }
       }
-      return false; // Aman
+      return null; // Tidak ada konflik
     } catch (e) {
       print("Error check conflict: $e");
-      return false; 
+      return null; 
     }
   }
   // ================== AUTH SECTION ==================
@@ -595,14 +604,12 @@ class DatabaseProvider extends ChangeNotifier {
 
   // lib/viewmodel/database_provider.dart
 
-  Future<List<Map<String, dynamic>>> fetchEventParticipants(
-    String eventId,
-  ) async {
+ Future<List<Map<String, dynamic>>> fetchEventParticipants(String eventId) async {
     try {
-      // Menyesuaikan dengan nama kolom asli di database Anda
       final response = await _supabase
           .from('registrations')
           .select('''
+          id,                 
           registration_date,
           chosen_division, 
           status,
@@ -623,7 +630,7 @@ class DatabaseProvider extends ChangeNotifier {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      log("Error fetching participants detail: $e");
+      // ... error handling
       return [];
     }
   }
@@ -748,6 +755,36 @@ class DatabaseProvider extends ChangeNotifier {
         return "Email ini sudah berlangganan.";
       }
       return "Gagal berlangganan: $e";
+    }
+  }
+ Future<List<Map<String, dynamic>>> fetchMyRegistrations() async {
+    if (_currentUser == null) return [];
+
+    try {
+      final response = await _supabase
+          .from('registrations')
+          .select('''
+            id,
+            status,
+            events (
+              id,
+              title,
+              event_date,
+              whatsapp_group_link,
+              poster_url,
+              category
+            )
+          ''')
+          .eq('user_id', _currentUser!.id)
+          // --- PERBAIKAN DI SINI ---
+          // Ganti 'created_at' menjadi 'registration_date'
+          .order('registration_date', ascending: false); 
+          // -------------------------
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print("Error fetching my registrations: $e");
+      return []; // Return list kosong jika error agar UI tidak crash
     }
   }
 }

@@ -1,3 +1,4 @@
+// File: lib/view/widgets/navbar.dart
 part of 'pages.dart';
 
 class Navbar extends StatelessWidget {
@@ -39,7 +40,7 @@ class Navbar extends StatelessWidget {
     );
   }
 
-  // --- FUNGSI BARU: MENAMPILKAN DIALOG KONFIRMASI LOGOUT ---
+  // --- FUNGSI DIALOG KONFIRMASI LOGOUT ---
   void _showLogoutDialog(BuildContext context, DatabaseProvider dbProvider) {
     showDialog(
       context: context,
@@ -48,21 +49,19 @@ class Navbar extends StatelessWidget {
           title: const Text("Konfirmasi Logout"),
           content: const Text("Apakah Anda yakin ingin keluar akun?"),
           actions: [
-            // Tombol Batal
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Tutup dialog
               },
               child: const Text("Batal", style: TextStyle(color: Colors.grey)),
             ),
-            // Tombol Ya (Logout)
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
-                Navigator.of(context).pop(); // Tutup dialog dulu
+                Navigator.of(context).pop(); // Tutup dialog
                 
                 // Proses Logout
                 dbProvider.logout();
@@ -84,7 +83,7 @@ class Navbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final dbProvider = context.watch<DatabaseProvider>();
-    final user = dbProvider.currentUser; // Ambil data user
+    final user = dbProvider.currentUser; 
     final bool isDesktop = width > 800;
 
     return Container(
@@ -123,6 +122,7 @@ class Navbar extends StatelessWidget {
 
           if (isLoggedIn)
             PopupMenuButton<String>(
+              offset: const Offset(0, 50), // Supaya menu muncul di bawah avatar
               onSelected: (value) {
                 if (value == 'organize') {
                   Navigator.push(
@@ -138,6 +138,14 @@ class Navbar extends StatelessWidget {
                       builder: (context) => const AdminDashboard(),
                     ),
                   );
+                } else if (value == 'history') { 
+                  // --- MENU BARU: HISTORY REGISTRASI ---
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MyRegistrationsPage(),
+                    ),
+                  );
                 } else if (value == 'profile') {
                   Navigator.push(
                     context,
@@ -146,29 +154,71 @@ class Navbar extends StatelessWidget {
                     ),
                   );
                 } else if (value == 'logout') {
-                  // --- PERUBAHAN DI SINI: Panggil Dialog Dulu ---
                   _showLogoutDialog(context, dbProvider);
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                // Menu Khusus Organizer
                 if (user?.role == 'organizer')
                   const PopupMenuItem<String>(
                     value: 'organize',
-                    child: Text('Organize Events'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.event_note, color: Colors.black54, size: 20),
+                        SizedBox(width: 10),
+                        Text('Organize Events'),
+                      ],
+                    ),
                   ),
+                
+                // Menu Khusus Admin
                 if (user?.role == 'admin')
                   const PopupMenuItem<String>(
                     value: 'admin',
-                    child: Text('Manage Admin'),
+                    child: Row(
+                      children: [
+                        Icon(Icons.admin_panel_settings, color: Colors.black54, size: 20),
+                        SizedBox(width: 10),
+                        Text('Manage Admin'),
+                      ],
+                    ),
                   ),
+                
+                // --- ITEM MENU BARU: MY REGISTRATIONS ---
+                const PopupMenuItem<String>(
+                  value: 'history',
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, color: Colors.black54, size: 20),
+                      SizedBox(width: 10),
+                      Text('My Registrations'),
+                    ],
+                  ),
+                ),
+                // ----------------------------------------
+
                 const PopupMenuItem<String>(
                   value: 'profile',
-                  child: Text('Manage Profile'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.black54, size: 20),
+                      SizedBox(width: 10),
+                      Text('Manage Profile'),
+                    ],
+                  ),
                 ),
+                
                 const PopupMenuDivider(),
+                
                 const PopupMenuItem<String>(
                   value: 'logout',
-                  child: Text('Logout', style: TextStyle(color: Colors.red)), // Opsional: Beri warna merah
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red, size: 20),
+                      SizedBox(width: 10),
+                      Text('Logout', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
                 ),
               ],
               child: Row(

@@ -31,6 +31,8 @@ class _OrganizerFormState extends State<OrganizerForm> {
   // Kontak
   final _waController = TextEditingController();
   final _lineController = TextEditingController();
+  // [BARU] Controller untuk Link WhatsApp Group
+  final _waGroupLinkController = TextEditingController();
   
   // Khusus Lomba
   final _feeController = TextEditingController(); 
@@ -74,6 +76,11 @@ class _OrganizerFormState extends State<OrganizerForm> {
       _feeController.text = data.fee;
       _waController.text = data.whatsapp;
       _lineController.text = data.lineId;
+      
+      // [BARU] Load Link WA Group (Jika isinya '-' kosongkan saja biar rapi)
+      _waGroupLinkController.text = (data.waGroupLink == '-' || data.waGroupLink.isEmpty) 
+          ? '' 
+          : data.waGroupLink;
       
       // Load Data Kuota (Convert int ke String)
       _quotaController.text = data.maxParticipants.toString(); 
@@ -223,7 +230,9 @@ class _OrganizerFormState extends State<OrganizerForm> {
         lineId: _lineController.text,
         divisions: divisionsList,
         subEvents: subEventsList,
-        maxParticipants: quota, // Kirim Kuota
+        maxParticipants: quota, 
+        // [BARU] Kirim Link Group WA
+        waGroupLink: _waGroupLinkController.text.isEmpty ? null : _waGroupLinkController.text,
       );
     } else {
       // UPDATE
@@ -242,7 +251,9 @@ class _OrganizerFormState extends State<OrganizerForm> {
         lineId: _lineController.text,
         divisions: divisionsList,
         subEvents: subEventsList,
-        maxParticipants: quota, // Kirim Kuota (Pastikan provider sudah diupdate)
+        maxParticipants: quota,
+        // [BARU] Kirim Link Group WA
+        waGroupLink: _waGroupLinkController.text.isEmpty ? null : _waGroupLinkController.text,
       );
     }
 
@@ -325,15 +336,12 @@ class _OrganizerFormState extends State<OrganizerForm> {
             const Divider(),
             _buildField("Lokasi (Ex: Universitas Ciputra)", controller: _locationController),
             
-            // --- [DISINI PERUBAHANNYA] ---
-            // Menambahkan Input Field untuk Kuota Peserta
             _buildField(
               "Kuota Maksimal Peserta (Angka)", 
               controller: _quotaController, 
               inputType: TextInputType.number, 
               hint: "Ex: 100"
             ),
-            // -----------------------------
             
             // --- LOGIKA TAMPILAN DINAMIS ---
             
@@ -375,6 +383,9 @@ class _OrganizerFormState extends State<OrganizerForm> {
             const Divider(),
             _buildField("No. Whatsapp (Ex: 08123456789)", controller: _waController, inputType: TextInputType.phone),
             _buildField("ID Line", controller: _lineController),
+            
+            // [BARU] Input Field untuk Link WhatsApp Group
+            _buildField("Link Group WhatsApp (Opsional)", controller: _waGroupLinkController, hint: "Ex: https://chat.whatsapp.com/..."),
 
             const SizedBox(height: 20),
 
