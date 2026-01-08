@@ -29,8 +29,41 @@ class DatabaseProvider extends ChangeNotifier {
   List<EventModel> get filteredEvents => _filteredEvents;
 
   // Getter events yang sudah ada (tetap biarkan)
-  List<EventModel> get events =>
-      _searchQuery.isEmpty ? _events : _filteredEvents;
+  List<EventModel> get events {
+    if (_searchQuery.isNotEmpty) return _filteredEvents;
+    
+    // Jika filter "All", return semua
+    if (_selectedDivisionFilter == "All") return _events;
+
+    // Filter Logic: Cocokkan Category, Divisi, atau SubEvent
+    return _events.where((e) {
+      bool catMatch = e.category.toLowerCase() == _selectedDivisionFilter.toLowerCase();
+      bool divMatch = e.divisions.any((d) => d.toLowerCase() == _selectedDivisionFilter.toLowerCase());
+      bool subMatch = e.subEvents.any((s) => s.toLowerCase() == _selectedDivisionFilter.toLowerCase());
+      return catMatch || divMatch || subMatch;
+    }).toList();
+  }
+
+  // Fungsi ambil list divisi unik untuk Chip Filter
+  List<String> getAvailableDivisions() {
+    Set<String> divisions = {"All"};
+    for (var event in _events) {
+      if(event.category.isNotEmpty) divisions.add(_toTitleCase(event.category)); 
+      for(var div in event.divisions) if(div.isNotEmpty) divisions.add(_toTitleCase(div));
+      for(var sub in event.subEvents) if(sub.isNotEmpty) divisions.add(_toTitleCase(sub));
+    }
+    return divisions.toList();
+  }
+
+  void setDivisionFilter(String filter) {
+    _selectedDivisionFilter = filter;
+    notifyListeners();
+  }
+
+  String _toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text.trim()[0].toUpperCase() + text.trim().substring(1).toLowerCase();
+  }
 
   // Getter lainnya (tetap biarkan)
   UserProfile? get currentUser => _currentUser;
@@ -38,7 +71,52 @@ class DatabaseProvider extends ChangeNotifier {
   List<UserProfile> get allUsers => _allUsers;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
+  String _selectedDivisionFilter = "All";
+  String get selectedDivisionFilter => _selectedDivisionFilter;
+  
+  Future<String?> checkTimeConflict(DateTime newEventDate) async {
+    if (_currentUser == null) return null;
 
+    try {
+      // Ambil status pendaftaran DAN judul event
+      final response = await _supabase
+          .from('registrations')
+          .select('status, events(title, event_date)') 
+          .eq('user_id', _currentUser!.id);
+
+      final joinedEvents = List<Map<String, dynamic>>.from(response);
+
+      for (var reg in joinedEvents) {
+        if (reg['events'] == null) continue;
+        
+        // Ambil status, default ke pending jika null
+        final status = reg['status']?.toString().toLowerCase() ?? 'pending';
+
+        // LOGIKA KUNCI:
+        // Jika statusnya 'rejected', anggap TIDAK ADA konflik (User bebas daftar lagi)
+        if (status == 'rejected') continue;
+
+        // Jika status 'accepted' atau 'pending', cek tanggalnya
+        final eventData = reg['events'] as Map<String, dynamic>;
+        if (eventData['event_date'] != null) {
+          DateTime joinedDate = DateTime.parse(eventData['event_date']);
+          
+          // Cek kesamaan Tanggal (Tahun, Bulan, Hari)
+          if (joinedDate.year == newEventDate.year && 
+              joinedDate.month == newEventDate.month && 
+              joinedDate.day == newEventDate.day) {
+            
+            // Return NAMA EVENT yang bentrok
+            return eventData['title']?.toString() ?? "Event Lain"; 
+          }
+        }
+      }
+      return null; // Tidak ada konflik
+    } catch (e) {
+      print("Error check conflict: $e");
+      return null; 
+    }
+  }
   // ================== AUTH SECTION ==================
 
   Future<void> loadUser() async {
@@ -321,9 +399,16 @@ class DatabaseProvider extends ChangeNotifier {
     try {
       final response = await _supabase
           .from('events')
-          .select('*')
-          .order('created_at', ascending: false);
-      _events = (response as List).map((e) => EventModel.fromJson(e)).toList();
+          .select('*'); 
+      
+      var loadedEvents = (response as List).map((e) => EventModel.fromJson(e)).toList();
+
+      // --- [BARU] SORTING SISA KUOTA TERBANYAK DI ATAS ---
+      loadedEvents.sort((a, b) {
+        return b.remainingQuota.compareTo(a.remainingQuota);
+      });
+
+      _events = loadedEvents;
       notifyListeners();
     } catch (e) {
       print("Error fetching events: $e");
@@ -398,6 +483,7 @@ class DatabaseProvider extends ChangeNotifier {
     String? waGroupLink,
     String? bankAccount,
     List<String>? subEvents,
+    required int maxParticipants,
   }) async {
     if (_currentUser == null) return "User belum login";
     try {
@@ -425,6 +511,8 @@ class DatabaseProvider extends ChangeNotifier {
         'registration_fee': fee ?? '0',
         'divisions': divisions ?? [],
         'sub_events': subEvents ?? [],
+        'max_participants': maxParticipants,
+        'current_participants': 0,
       });
 
       await fetchAllEvents();
@@ -458,6 +546,7 @@ class DatabaseProvider extends ChangeNotifier {
     String? terms,
     DateTime? tmDate,
     DateTime? prelimDate,
+    int? maxParticipants,
   }) async {
     try {
       _setLoading(true);
@@ -480,6 +569,7 @@ class DatabaseProvider extends ChangeNotifier {
         'registration_fee': fee ?? '0',
         'divisions': divisions ?? [],
         'sub_events': subEvents ?? [],
+        'max_participants': maxParticipants ?? 0,
       };
 
       if (posterUrl != null) {
@@ -514,14 +604,12 @@ class DatabaseProvider extends ChangeNotifier {
 
   // lib/viewmodel/database_provider.dart
 
-  Future<List<Map<String, dynamic>>> fetchEventParticipants(
-    String eventId,
-  ) async {
+ Future<List<Map<String, dynamic>>> fetchEventParticipants(String eventId) async {
     try {
-      // Menyesuaikan dengan nama kolom asli di database Anda
       final response = await _supabase
           .from('registrations')
           .select('''
+          id,                 
           registration_date,
           chosen_division, 
           status,
@@ -542,12 +630,12 @@ class DatabaseProvider extends ChangeNotifier {
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      log("Error fetching participants detail: $e");
+      // ... error handling
       return [];
     }
   }
 
-  Future<bool> registerToEvent(
+ Future<bool> registerToEvent(
     String eventId,
     String division,
     String? cvLink,
@@ -555,15 +643,21 @@ class DatabaseProvider extends ChangeNotifier {
   ) async {
     if (_currentUser == null) return false;
     try {
+      // 1. Simpan Data Pendaftaran Baru
+      // (Trigger di Database akan OTOMATIS mengupdate current_participants di tabel events)
       await _supabase.from('registrations').insert({
         'user_id': _currentUser!.id,
         'event_id': eventId,
-        'status': 'pending', // Pastikan huruf kecil sesuai constraint DB
+        'status': 'pending', 
         'registration_date': DateTime.now().toIso8601String(),
         'chosen_division': division,
         'payment_proof_url': proofLink,
         'cv_link': cvLink,
       });
+
+      // 2. Refresh data lokal agar UI aplikasi langsung update sisa kuota terbaru
+      await fetchAllEvents(); 
+
       return true;
     } catch (e) {
       log("Error registering detail: $e");
@@ -661,6 +755,36 @@ class DatabaseProvider extends ChangeNotifier {
         return "Email ini sudah berlangganan.";
       }
       return "Gagal berlangganan: $e";
+    }
+  }
+ Future<List<Map<String, dynamic>>> fetchMyRegistrations() async {
+    if (_currentUser == null) return [];
+
+    try {
+      final response = await _supabase
+          .from('registrations')
+          .select('''
+            id,
+            status,
+            events (
+              id,
+              title,
+              event_date,
+              whatsapp_group_link,
+              poster_url,
+              category
+            )
+          ''')
+          .eq('user_id', _currentUser!.id)
+          // --- PERBAIKAN DI SINI ---
+          // Ganti 'created_at' menjadi 'registration_date'
+          .order('registration_date', ascending: false); 
+          // -------------------------
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print("Error fetching my registrations: $e");
+      return []; // Return list kosong jika error agar UI tidak crash
     }
   }
 }

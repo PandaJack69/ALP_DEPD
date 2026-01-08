@@ -18,15 +18,13 @@ class _EventHeaderState extends State<EventHeader> {
     context.read<DatabaseProvider>().searchEvents(query);
   }
 
-  // --- FUNGSI BARU: CEK LOGIN SEBELUM AKSI ---
+  // --- FUNGSI CEK LOGIN (Hanya dipakai untuk Search Result nanti, kalau perlu) ---
   Future<void> _checkLoginAndProceed(BuildContext context, VoidCallback action) async {
     final provider = context.read<DatabaseProvider>();
     
     if (provider.isLoggedIn) {
-      // Jika sudah login, lanjut ke aksi (buka detail)
       action();
     } else {
-      // Jika belum, tampilkan Pop-up Warning
       bool confirm = await showConfirmationDialog(
         context,
         title: "Akses Terbatas",
@@ -35,7 +33,6 @@ class _EventHeaderState extends State<EventHeader> {
         cancelLabel: "Batal",
       );
 
-      // Arahkan ke Login Page jika user setuju
       if (confirm && context.mounted) {
         Navigator.pushNamed(context, '/login');
       }
@@ -53,7 +50,7 @@ class _EventHeaderState extends State<EventHeader> {
     final dbProvider = context.watch<DatabaseProvider>();
     final now = DateTime.now();
 
-    // Filter event Upcoming
+    // Filter event Upcoming (Yang pendaftarannya BELUM dibuka)
     final upcomingEvents = dbProvider.events.where((e) {
       return now.isBefore(e.openRegDate);
     }).toList();
@@ -152,22 +149,24 @@ class _EventHeaderState extends State<EventHeader> {
                             itemBuilder: (context, index) {
                               final event = upcomingEvents[index];
                               
-                              // --- MODIFIKASI DI SINI ---
-                              // Bungkus kartu dengan GestureDetector & AbsorbPointer
+                              // --- UPDATE LOGIC DI SINI ---
                               return GestureDetector(
                                 onTap: () {
-                                  // Cek login dulu baru navigasi
-                                  _checkLoginAndProceed(context, () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => EventDetailPage(event: event),
-                                      ),
-                                    );
-                                  });
+                                  // KARENA INI LIST UPCOMING (BELUM BUKA),
+                                  // KITA BLOKIR NAVIGASI DAN TAMPILKAN WARNING.
+                                  
+                                  String openDateStr = DateFormat('dd MMMM yyyy').format(event.openRegDate);
+
+                                  showErrorDialog(
+                                    context,
+                                    title: "Coming Soon",
+                                    message: "Pendaftaran event ini baru akan dibuka pada tanggal:\n\n$openDateStr",
+                                  );
+                                  
+                                  // Return agar tidak lanjut navigasi
+                                  return;
                                 },
                                 // AbsorbPointer mencegah UpcomingEventCard menerima klik langsung
-                                // sehingga GestureDetector di atasnya yang bekerja
                                 child: AbsorbPointer(
                                   child: UpcomingEventCard(
                                     event: event,

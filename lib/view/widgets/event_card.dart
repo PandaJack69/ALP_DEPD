@@ -1,5 +1,11 @@
-// File: lib/view/widgets/event_card.dart
-part of 'pages.dart';
+import 'package:alp_depd/model/custom_models.dart';
+import 'package:alp_depd/view/pages/admin/registrationpage.dart';
+import 'package:alp_depd/view/pages/user/eventDetailPage.dart';
+import 'package:alp_depd/view/pages/registerpage.dart'; // Pastikan import ini ada untuk Quick Apply
+import 'package:alp_depd/viewmodel/database_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'custom_dialogs.dart'; 
 
 class EventCard extends StatefulWidget {
   final EventModel event;
@@ -20,7 +26,7 @@ class EventCard extends StatefulWidget {
 class _EventCardState extends State<EventCard> {
   bool _isHovered = false;
 
-  // Logic Countdown & Status
+  // Logic Status
   bool get isComingSoon => DateTime.now().isBefore(widget.event.openRegDate);
   bool get isOpen {
     final now = DateTime.now();
@@ -39,28 +45,25 @@ class _EventCardState extends State<EventCard> {
   }
 
   String _formatDate(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+    return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
   }
 
-  // --- FUNGSI CEK LOGIN (Reusable) ---
+  // Fungsi Cek Login
   Future<void> _checkLoginAndProceed(BuildContext context, VoidCallback action) async {
     final provider = context.read<DatabaseProvider>();
     
     if (provider.isLoggedIn) {
-      // Jika sudah login, jalankan aksi (ke detail atau register)
       action();
     } else {
-      // Jika belum login, munculkan Pop-up Warning
       bool confirm = await showConfirmationDialog(
         context,
         title: "Akses Terbatas",
         message: "Kamu harus login terlebih dahulu untuk mengakses fitur ini.",
         confirmLabel: "Login Sekarang",
         cancelLabel: "Nanti Saja",
-        isDestructive: false, // Warna tombol biasa (bukan merah bahaya)
+        isDestructive: false, 
       );
 
-      // Jika user tekan "Login Sekarang", arahkan ke LoginPage
       if (confirm && context.mounted) {
         Navigator.pushNamed(context, '/login');
       }
@@ -70,10 +73,24 @@ class _EventCardState extends State<EventCard> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // --- LOGIKA KLIK CARD (LIHAT DETAIL) ---
       onTap: () {
-        // Panggil fungsi cek login sebelum ke Detail Page
-        // Sesuai request: "lihat detailnya seperti login dlu"
+        if (isComingSoon) {
+           showDialog(
+             context: context,
+             builder: (ctx) => AlertDialog(
+               title: const Text("Coming Soon"),
+               content: Text("Event ini baru akan dibuka pada tanggal ${_formatDate(widget.event.openRegDate)}."),
+               actions: [
+                 TextButton(
+                   onPressed: () => Navigator.pop(ctx),
+                   child: const Text("OK"),
+                 )
+               ],
+             ),
+           );
+           return; 
+        }
+
         _checkLoginAndProceed(context, () {
           Navigator.push(
             context,
@@ -126,7 +143,6 @@ class _EventCardState extends State<EventCard> {
                       onEnter: (_) => setState(() => _isHovered = true),
                       onExit: (_) => setState(() => _isHovered = false),
                       child: GestureDetector(
-                        // --- LOGIKA KLIK APPLY (QUICK APPLY) ---
                         onTap: () {
                           _checkLoginAndProceed(context, () {
                             Navigator.push(
@@ -190,9 +206,9 @@ class _EventCardState extends State<EventCard> {
                 children: [
                   // Status & Date
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Supaya tanggal di kanan
                     children: [
                       _statusChip(),
-                      const SizedBox(width: 10),
                       Text(
                         _formatDate(widget.event.closeRegDate),
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -219,9 +235,58 @@ class _EventCardState extends State<EventCard> {
                     widget.event.description.isNotEmpty 
                         ? widget.event.description 
                         : "No description available.",
-                    maxLines: 2,
+                    maxLines: 1, // Kurangi jadi 1 baris agar muat
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  
+                  const SizedBox(height: 12),
+
+                  // --- INFO TAMBAHAN: LOKASI & KUOTA ---
+                  Row(
+                    children: [
+                      // Lokasi
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                widget.event.location,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // [BARU] Indikator Kuota (Peserta)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.people_outline, size: 14, color: widget.event.remainingQuota > 0 ? Colors.blueGrey : Colors.red),
+                            const SizedBox(width: 4),
+                            Text(
+                              // Tampilan: "12/100"
+                              "${widget.event.currentParticipants}/${widget.event.maxParticipants}",
+                              style: TextStyle(
+                                fontSize: 11, 
+                                fontWeight: FontWeight.bold,
+                                color: widget.event.remainingQuota > 0 ? Colors.blueGrey : Colors.red
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
