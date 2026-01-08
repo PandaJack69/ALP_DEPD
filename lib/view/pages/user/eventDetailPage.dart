@@ -25,6 +25,10 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   Timer? _timer;
   late Duration _diff;
+  
+  // [BARU] Controller untuk input email notifikasi
+  final TextEditingController _notifyEmailCtrl = TextEditingController();
+  bool _isNotifying = false; // Loading state untuk tombol notify
 
   @override
   void initState() {
@@ -48,8 +52,47 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // Penting: Hentikan timer saat keluar halaman
+    _timer?.cancel(); 
+    _notifyEmailCtrl.dispose(); // [BARU] Dispose controller
     super.dispose();
+  }
+
+  // [BARU] Fungsi Handle Notify
+  Future<void> _handleNotify() async {
+    final email = _notifyEmailCtrl.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email tidak boleh kosong"), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isNotifying = true);
+
+    // Panggil fungsi subscribe dari Provider
+    final provider = context.read<DatabaseProvider>();
+    String? error = await provider.subscribeNewsletter(email);
+
+    if (mounted) {
+      setState(() => _isNotifying = false);
+
+      if (error == null) {
+        // SUKSES
+        _notifyEmailCtrl.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Berhasil! Kami akan mengirimkan notifikasi ke email Anda."),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // GAGAL
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -148,6 +191,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
                           ),
 
                         const SizedBox(height: 60),
+                        
+                        // [BARU] Widget Notify Input yang sudah tersambung
                         _buildNotifyInput(),
                       ],
                     ),
@@ -302,7 +347,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
             _detailRow(
               "Sisa Kuota",
               "${widget.event.remainingQuota} seats",
-            ), // [BARU]
+            ),
           ],
         ),
       ),
@@ -376,14 +421,13 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   Widget _buildApplyButton(bool isLoggedIn) {
     final bool isClosed = DateTime.now().isAfter(widget.event.closeRegDate);
-    final bool isFull = widget.event.remainingQuota <= 0; // [BARU] Cek Penuh
+    final bool isFull = widget.event.remainingQuota <= 0;
 
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 20),
-          // Abu-abu jika tutup/penuh
           backgroundColor: (isClosed || isFull)
               ? Colors.grey
               : const Color(0xff3F054F),
@@ -392,8 +436,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
           ),
         ),
         onPressed: () async {
-          // 1. Cek Closed & Full
-          if (isClosed) { return; }
+          if (isClosed) return;
           if (isFull) {
             await showErrorDialog(
               context,
@@ -404,31 +447,24 @@ class _EventDetailPageState extends State<EventDetailPage> {
           }
 
           if (!isLoggedIn) {
-            /* ... show login dialog ... */
-             // Tambahkan logika navigasi ke login jika perlu
+             // Opsional: Tambahkan logika redirect ke login
             return;
           }
 
-          // 2. Cek Tabrakan Jadwal (LOGIKA BARU)
           final provider = context.read<DatabaseProvider>();
-          
-          // Fungsi ini sekarang mengembalikan Nama Event (String?)
           String? conflictingEventName = await provider.checkTimeConflict(
             widget.event.eventDate,
           );
 
-          // Jika ada nama event yang kembali, berarti BENTROK
           if (conflictingEventName != null) {
             await showErrorDialog(
               context,
               title: "Jadwal Bentrok!",
-              // PESAN KHUSUS SESUAI REQUEST
               message: "Kamu telah terdaftar di \"$conflictingEventName\".",
             );
-            return; // Blokir akses
+            return;
           }
 
-          // 3. Lanjut Daftar (Jika tidak ada konflik)
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -450,12 +486,14 @@ class _EventDetailPageState extends State<EventDetailPage> {
     );
   }
 
+  // [BARU] Widget Notify Input dengan Logika Database
   Widget _buildNotifyInput() => SizedBox(
     width: 620,
     child: Row(
       children: [
         Expanded(
           child: TextField(
+            controller: _notifyEmailCtrl, // Hubungkan controller
             decoration: InputDecoration(
               hintText: "Enter your email",
               filled: true,
@@ -469,13 +507,15 @@ class _EventDetailPageState extends State<EventDetailPage> {
         ),
         const SizedBox(width: 18),
         ElevatedButton(
-          onPressed: () {},
+          onPressed: _isNotifying ? null : _handleNotify, // Panggil fungsi saat diklik
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xff3F054F),
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
             shape: const StadiumBorder(),
           ),
-          child: const Text("Notify", style: TextStyle(color: Colors.white)),
+          child: _isNotifying 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+              : const Text("Notify", style: TextStyle(color: Colors.white)),
         ),
       ],
     ),
